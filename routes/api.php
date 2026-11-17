@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Admin\InvestorController;
 use App\Http\Controllers\Admin\OnboardingController;
 use App\Http\Controllers\Admin\PortfolioController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\WhatsAppWebhookController;
@@ -74,4 +75,7 @@ Route::middleware('admin.mfa')->group(function (): void {
     Route::get('/admin/reviews', [ReviewController::class, 'index']);
     Route::post('/admin/reviews/{caseId}/resolve', [ReviewController::class, 'resolve'])
         ->whereUuid('caseId');
+
+    Route::post('/admin/clients/{investorId}/reports', [ReportController::class, 'store'])
+        ->whereUuid('investorId');
 });
