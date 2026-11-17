@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\SyncMarketDataCommand;
 use App\Http\Middleware\EnsureAdminMfa;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -13,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'api/v1',
         health: '/up',
     )
+    ->withCommands([
+        SyncMarketDataCommand::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin.mfa' => EnsureAdminMfa::class,

@@ -28,3 +28,10 @@ php artisan test
 
 Nenhum registro financeiro é exposto por investidor cruzado: o cadastro é feito pelo
 proprietário e todas as mutações geram `audit_events` com `trace_id`.
+
+## Data Hub
+
+`php artisan market:sync` ingere BCB, Tesouro, CVM e o provedor comercial conforme
+`config/market_data.php`. Cada fonte declara licença, direito de uso e janela de
+atualidade; cotações vencidas ficam marcadas como `stale` e registros inválidos são
+rejeitados — nenhum preço é inventado.
