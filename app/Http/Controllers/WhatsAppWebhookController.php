@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Domain\Conversation\ConversationOrchestrator;
 use App\Domain\WhatsApp\HumanHandoff;
 use App\Domain\WhatsApp\WebhookAuthenticator;
 use App\Domain\WhatsApp\WebhookProcessor;
@@ -30,6 +31,7 @@ final class WhatsAppWebhookController extends Controller
         WebhookAuthenticator $authenticator,
         WebhookProcessor $processor,
         HumanHandoff $handoff,
+        ConversationOrchestrator $orchestrator,
     ): JsonResponse {
         $raw = $request->getContent();
 
@@ -48,17 +50,34 @@ final class WhatsAppWebhookController extends Controller
         }
 
         $statuses = [];
+        $replies = [];
+        $now = now()->toDateTimeImmutable();
+
         foreach ($messages as $message) {
             $externalId = isset($message['id']) ? (string) $message['id'] : '';
             if ($externalId === '') {
                 continue;
             }
-            $statuses[$externalId] = $processor->process($externalId, $payload, now()->toDateTimeImmutable());
+
+            $status = $processor->process($externalId, $payload, $now);
+            $statuses[$externalId] = $status;
+
+            if (in_array($status, ['duplicate', 'ignored'], true)) {
+                continue;
+            }
+
+            $inbound = $processor->extract($payload);
+            $investor = $inbound === null ? null : $processor->investorForPhone($inbound['phone']);
+
+            if ($inbound !== null && $investor !== null) {
+                $replies[$externalId] = $orchestrator->handle($investor, $inbound['body'], $now);
+            }
         }
 
         return response()->json([
             'processed' => count($statuses),
             'statuses' => $statuses,
+            'replies' => $replies,
             'handoff' => in_array('human_handoff', $statuses, true) ? $handoff->instructions() : null,
         ]);
     }

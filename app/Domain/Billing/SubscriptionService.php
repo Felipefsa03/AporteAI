@@ -138,6 +138,28 @@ final class SubscriptionService
         return true;
     }
 
+    /** RB-031/A14: "Já paguei" nunca desbloqueia; apenas registra verificação auditada. */
+    public function requestVerification(
+        Subscription $subscription,
+        PaymentRecord $payment,
+        DateTimeImmutable $now,
+    ): bool {
+        if ($payment->status === 'paid' && $payment->reconciled_at !== null) {
+            return false;
+        }
+
+        if ($payment->status === 'processing') {
+            return false;
+        }
+
+        $payment->forceFill(['status' => 'processing'])->save();
+        $this->audit('billing.verification_requested', $subscription, $now, [
+            'payment_id' => $payment->id,
+        ]);
+
+        return true;
+    }
+
     public function suspend(Subscription $subscription, string $reason, DateTimeImmutable $now): void
     {
         if (trim($reason) === '') {
