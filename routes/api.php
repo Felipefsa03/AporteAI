@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin\ActivationController;
 use App\Http\Controllers\Admin\AllocationController;
+use App\Http\Controllers\Admin\AporteController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Admin\InvestorController;
@@ -59,4 +60,13 @@ Route::middleware('admin.mfa')->group(function (): void {
         ->whereUuid('investorId');
     Route::post('/admin/clients/{investorId}/allocation', [AllocationController::class, 'propose'])
         ->whereUuid('investorId');
+
+    Route::post('/admin/clients/{investorId}/aporte', [AporteController::class, 'start'])
+        ->whereUuid('investorId');
+    Route::post('/admin/aporte/{sessionId}/answer', [AporteController::class, 'answer'])
+        ->whereUuid('sessionId');
+    Route::post('/admin/aporte/{sessionId}/propose', [AporteController::class, 'propose'])
+        ->whereUuid('sessionId');
+    Route::post('/admin/aporte/{sessionId}/confirm', [AporteController::class, 'confirm'])
+        ->whereUuid('sessionId');
 });
