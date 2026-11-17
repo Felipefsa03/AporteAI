@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 final class PaymentRecord extends Model
 {
@@ -33,4 +34,9 @@ final class PaymentRecord extends Model
         'paid_at' => 'immutable_datetime',
         'reconciled_at' => 'immutable_datetime',
     ];
+
+    public function subscription(): BelongsTo
+    {
+        return $this->belongsTo(Subscription::class);
+    }
 }

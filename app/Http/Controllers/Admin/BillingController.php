@@ -84,6 +84,32 @@ final class BillingController extends Controller
         ]);
     }
 
+    public function manualSettlement(Request $request, string $paymentId): JsonResponse
+    {
+        $data = $request->validate([
+            'evidence_uri' => ['required', 'string'],
+        ]);
+
+        $payment = PaymentRecord::query()->findOrFail($paymentId);
+        $subscription = Subscription::query()->findOrFail($payment->subscription_id);
+
+        try {
+            $changed = $this->service->recordManualSettlement(
+                $subscription,
+                $payment,
+                $data['evidence_uri'],
+                now()->toDateTimeImmutable(),
+            );
+        } catch (BillingException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        }
+
+        return response()->json([
+            'applied' => $changed,
+            'access' => $this->access->label($subscription->fresh()),
+        ]);
+    }
+
     public function suspend(Request $request, string $subscriptionId): JsonResponse
     {
         $data = $request->validate(['reason' => ['required', 'string']]);
