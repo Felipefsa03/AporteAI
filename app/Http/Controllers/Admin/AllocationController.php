@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domain\Allocation\AllocationEngine;
 use App\Domain\Billing\Cents;
+use App\Domain\Explanation\ProposalExplainer;
 use App\Http\Controllers\Controller;
 use App\Models\Instrument;
 use App\Models\Investor;
@@ -16,8 +17,10 @@ use Illuminate\Http\Request;
 
 final class AllocationController extends Controller
 {
-    public function __construct(private readonly AllocationEngine $engine)
-    {
+    public function __construct(
+        private readonly AllocationEngine $engine,
+        private readonly ProposalExplainer $explainer,
+    ) {
     }
 
     public function propose(Request $request, string $investorId): JsonResponse
@@ -27,6 +30,7 @@ final class AllocationController extends Controller
             'reserve_brl' => ['sometimes', 'string'],
             'debts_brl' => ['sometimes', 'string'],
             'financial_changes' => ['sometimes', 'boolean'],
+            'explain' => ['sometimes', 'boolean'],
         ]);
 
         $investor = Investor::query()->findOrFail($investorId);
@@ -59,6 +63,17 @@ final class AllocationController extends Controller
             now()->toDateTimeImmutable(),
         );
 
-        return response()->json($allocation->toArray());
+        $payload = $allocation->toArray();
+
+        if (($data['explain'] ?? false) === true) {
+            $payload['explanation'] = $this->explainer->explain(
+                $investor,
+                $allocation,
+                now()->toDateTimeImmutable(),
+                ['user_text' => (string) ($data['user_text'] ?? '')],
+            );
+        }
+
+        return response()->json($payload);
     }
 }
