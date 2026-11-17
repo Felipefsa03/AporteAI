@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\ActivationController;
+use App\Http\Controllers\Admin\AllocationController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Admin\InvestorController;
@@ -55,5 +56,7 @@ Route::middleware('admin.mfa')->group(function (): void {
     Route::post('/admin/clients/{investorId}/portfolio/recommendations', [PortfolioController::class, 'recommend'])
         ->whereUuid('investorId');
     Route::post('/admin/clients/{investorId}/portfolio/executions', [PortfolioController::class, 'execute'])
+        ->whereUuid('investorId');
+    Route::post('/admin/clients/{investorId}/allocation', [AllocationController::class, 'propose'])
         ->whereUuid('investorId');
 });
