@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AporteController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Admin\InvestorController;
+use App\Http\Controllers\Admin\MetricsController;
 use App\Http\Controllers\Admin\OnboardingController;
 use App\Http\Controllers\Admin\PortfolioController;
 use App\Http\Controllers\Admin\ReportController;
@@ -24,6 +25,10 @@ Route::post('/admin/auth/login', [AuthController::class, 'login']);
 
 Route::middleware('admin.mfa')->group(function (): void {
     Route::post('/admin/auth/logout', [AuthController::class, 'logout']);
+
+    Route::get('/admin/metrics', [MetricsController::class, 'index']);
+    Route::get('/admin/clients/{investorId}/metrics', [MetricsController::class, 'client'])
+        ->whereUuid('investorId');
 
     Route::get('/admin/investors', [InvestorController::class, 'index']);
     Route::post('/admin/investors', [InvestorController::class, 'store']);
