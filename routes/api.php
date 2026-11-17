@@ -2,10 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\ActivationController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Admin\InvestorController;
+use App\Http\Controllers\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/webhooks/whatsapp-bot/verify', [WhatsAppWebhookController::class, 'verify']);
+Route::post('/webhooks/whatsapp-bot', [WhatsAppWebhookController::class, 'webhook']);
 
 Route::post('/admin/auth/login', [AuthController::class, 'login']);
 
@@ -25,4 +30,12 @@ Route::middleware('admin.mfa')->group(function (): void {
         ->whereUuid('subscriptionId');
     Route::post('/admin/subscriptions/{subscriptionId}/reactivate', [BillingController::class, 'reactivate'])
         ->whereUuid('subscriptionId');
+
+    Route::post('/admin/clients/{investorId}/opt-ins', [ActivationController::class, 'optIn'])
+        ->whereUuid('investorId');
+    Route::post('/admin/clients/{investorId}/activate', [ActivationController::class, 'activate'])
+        ->whereUuid('investorId');
+    Route::get('/admin/clients/{investorId}/activation', [ActivationController::class, 'status'])
+        ->whereUuid('investorId');
+    Route::get('/admin/handoff', [ActivationController::class, 'handoff']);
 });
