@@ -7,11 +7,13 @@ namespace App\Http\Controllers\Admin;
 use App\Domain\Aporte\AporteException;
 use App\Domain\Aporte\AporteFlowService;
 use App\Domain\Billing\Cents;
+use App\Domain\Review\ReviewException;
 use App\Http\Controllers\Controller;
 use App\Models\AporteSession;
 use App\Models\Instrument;
 use App\Models\Investor;
 use App\Models\MarketQuote;
+use App\Models\ReviewCase;
 use App\Models\SuitabilityAssessment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -64,6 +66,11 @@ final class AporteController extends Controller
     public function propose(Request $request, string $sessionId): JsonResponse
     {
         $session = AporteSession::query()->findOrFail($sessionId);
+        try {
+            $this->assertNoCriticalBlock($session->investor_id);
+        } catch (ReviewException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 423);
+        }
         $assessment = SuitabilityAssessment::query()
             ->where('investor_id', $session->investor_id)
             ->where('status', 'valid')
@@ -100,6 +107,11 @@ final class AporteController extends Controller
             'amount_brl' => ['required', 'string'],
         ]);
         $session = AporteSession::query()->findOrFail($sessionId);
+        try {
+            $this->assertNoCriticalBlock($session->investor_id);
+        } catch (ReviewException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 423);
+        }
         $instrument = isset($data['instrument_id'])
             ? Instrument::query()->findOrFail($data['instrument_id'])
             : null;
@@ -117,5 +129,16 @@ final class AporteController extends Controller
         }
 
         return response()->json($result);
+    }
+
+    private function assertNoCriticalBlock(string $investorId): void
+    {
+        if (ReviewCase::query()
+            ->where('investor_id', $investorId)
+            ->where('critical', true)
+            ->where('status', 'pending')
+            ->exists()) {
+            throw new ReviewException('Revisão crítica pendente: nenhuma proposta ou ordem pode avançar.');
+        }
     }
 }
