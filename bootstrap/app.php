@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\SyncMarketDataCommand;
 use App\Http\Middleware\EnsureAdminMfa;
+use App\Providers\BillingServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'api/v1',
         health: '/up',
     )
+    ->withCommands([
+        SyncMarketDataCommand::class,
+    ])
+    ->withProviders([
+        BillingServiceProvider::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin.mfa' => EnsureAdminMfa::class,

@@ -1,0 +1,30 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('whatsapp_conversations', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->uuid('investor_id')->nullable();
+            $table->string('bot_phone_number_id');
+            $table->string('state')->default('unknown');
+            $table->timestampTz('last_message_at')->nullable();
+            $table->timestampsTz();
+
+            $table->foreign('investor_id')->references('id')->on('investors')->nullOnDelete();
+            $table->index(['bot_phone_number_id', 'state']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('whatsapp_conversations');
+    }
+};

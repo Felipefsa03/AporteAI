@@ -28,3 +28,18 @@ php artisan test
 
 Nenhum registro financeiro é exposto por investidor cruzado: o cadastro é feito pelo
 proprietário e todas as mutações geram `audit_events` com `trace_id`.
+
+## Data Hub
+
+`php artisan market:sync` ingere BCB, Tesouro, CVM e o provedor comercial conforme
+`config/market_data.php`. Cada fonte declara licença, direito de uso e janela de
+atualidade; cotações vencidas ficam marcadas como `stale` e registros inválidos são
+rejeitados — nenhum preço é inventado.
+
+## Cobrança
+
+`config/billing.php` define o produto único: R$ 29,90/mês ou 12 × R$ 19,90
+(R$ 238,80/ano), com as mesmas funcionalidades. Valores são inteiros em centavos.
+A assinatura registra separadamente `status` (cobrança) e `access_status` (acesso):
+vencimento sem quitação conciliada suspende o acesso sem cancelar o contrato anual.
+Webhooks são idempotentes por `external_id` e `processing` nunca é tratado como quitação.
