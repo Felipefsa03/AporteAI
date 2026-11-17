@@ -160,6 +160,48 @@ final class SubscriptionService
         return true;
     }
 
+    /** RB-031: baixa manual exige evidência e nunca aceita apenas o comprovante do cliente. */
+    public function recordManualSettlement(
+        Subscription $subscription,
+        PaymentRecord $payment,
+        string $evidenceUri,
+        DateTimeImmutable $now,
+    ): bool {
+        if (trim($evidenceUri) === '') {
+            throw new BillingException('Baixa manual exige evidência auditável.');
+        }
+
+        if ($payment->status === 'paid' && $payment->reconciled_at !== null) {
+            return false;
+        }
+
+        $payment->forceFill([
+            'status' => 'paid',
+            'paid_at' => $now,
+            'reconciled_at' => $now,
+        ])->save();
+
+        if (! $this->access->allowsPaidServices($subscription) && $subscription->status !== 'canceled') {
+            $fromStatus = $subscription->status;
+            $fromAccess = $subscription->access_status;
+            $nextDue = $subscription->due_at === null
+                ? $now->modify('+1 month')
+                : $subscription->due_at->modify('+1 month');
+
+            $subscription->forceFill([
+                'status' => 'active',
+                'access_status' => 'active',
+                'due_at' => $nextDue,
+            ])->save();
+
+            $this->accessEvent($subscription, $fromStatus, $fromAccess, 'manual_settlement: '.$evidenceUri, $now);
+        }
+
+        $this->audit('billing.manual_settlement', $subscription, $now, ['evidence_uri' => $evidenceUri]);
+
+        return true;
+    }
+
     public function suspend(Subscription $subscription, string $reason, DateTimeImmutable $now): void
     {
         if (trim($reason) === '') {

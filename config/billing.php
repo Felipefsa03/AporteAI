@@ -30,6 +30,7 @@ return [
     'gateway' => [
         'available' => env('BILLING_GATEWAY_AVAILABLE', true),
         'allowed_hosts' => array_values(array_filter(explode(',', (string) env('BILLING_GATEWAY_HOSTS', '')))),
+        'webhook_secret' => env('BILLING_GATEWAY_WEBHOOK_SECRET'),
     ],
 
     'commands' => [
