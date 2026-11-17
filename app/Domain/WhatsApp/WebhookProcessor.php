@@ -21,6 +21,38 @@ final class WebhookProcessor
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{external_id: string, phone: string, body: string, phone_number_id: string}|null
+     */
+    public function extract(array $payload): ?array
+    {
+        $message = $payload['entry'][0]['changes'][0]['value']['messages'][0] ?? null;
+        $phoneNumberId = $payload['entry'][0]['changes'][0]['value']['metadata']['phone_number_id'] ?? null;
+
+        if (! is_array($message) || ! is_string($phoneNumberId)) {
+            return null;
+        }
+
+        return [
+            'external_id' => isset($message['id']) ? (string) $message['id'] : '',
+            'phone' => isset($message['from']) ? (string) $message['from'] : '',
+            'body' => isset($message['text']['body']) ? (string) $message['text']['body'] : '',
+            'phone_number_id' => $phoneNumberId,
+        ];
+    }
+
+    public function investorForPhone(string $phone): ?Investor
+    {
+        if ($phone === '') {
+            return null;
+        }
+
+        return Investor::query()
+            ->where('phone_e164', $this->normalizePhone($phone))
+            ->first();
+    }
+
     /** @param array<string, mixed> $payload */
     public function process(string $externalId, array $payload, DateTimeImmutable $receivedAt): string
     {
