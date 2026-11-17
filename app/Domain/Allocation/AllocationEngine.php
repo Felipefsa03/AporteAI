@@ -88,6 +88,7 @@ final class AllocationEngine
                 'risk_bps' => (int) $rule['risk_bps'],
                 'source' => $source['provider'].'/'.$source['dataset'],
                 'as_of' => $quote->as_of->format(DATE_ATOM),
+                'max_age_seconds' => $maxAge,
             ];
         }
 
@@ -118,6 +119,7 @@ final class AllocationEngine
                 'risk_bps' => $candidate['risk_bps'],
                 'source' => $candidate['source'],
                 'as_of' => $candidate['as_of'],
+                'max_age_seconds' => $candidate['max_age_seconds'],
                 'rule_version' => self::RULE_VERSION,
             ];
         }
