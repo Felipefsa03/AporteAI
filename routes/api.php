@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AllocationController;
 use App\Http\Controllers\Admin\AporteController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BillingController;
+use App\Http\Controllers\Admin\DataRightsController;
 use App\Http\Controllers\Admin\InvestorController;
 use App\Http\Controllers\Admin\MetricsController;
 use App\Http\Controllers\Admin\OnboardingController;
@@ -25,6 +26,15 @@ Route::post('/admin/auth/login', [AuthController::class, 'login']);
 
 Route::middleware('admin.mfa')->group(function (): void {
     Route::post('/admin/auth/logout', [AuthController::class, 'logout']);
+
+    Route::get('/admin/clients/{investorId}/data/export', [DataRightsController::class, 'export'])
+        ->whereUuid('investorId');
+    Route::get('/admin/clients/{investorId}/data/review', [DataRightsController::class, 'review'])
+        ->whereUuid('investorId');
+    Route::post('/admin/clients/{investorId}/data/correction', [DataRightsController::class, 'correct'])
+        ->whereUuid('investorId');
+    Route::post('/admin/clients/{investorId}/data/deletion', [DataRightsController::class, 'delete'])
+        ->whereUuid('investorId');
 
     Route::get('/admin/metrics', [MetricsController::class, 'index']);
     Route::get('/admin/clients/{investorId}/metrics', [MetricsController::class, 'client'])
