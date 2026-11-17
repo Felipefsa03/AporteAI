@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Admin\InvestorController;
 use App\Http\Controllers\Admin\OnboardingController;
+use App\Http\Controllers\Admin\PortfolioController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -48,4 +49,11 @@ Route::middleware('admin.mfa')->group(function (): void {
         ->whereUuid('investorId');
     Route::post('/admin/onboarding/{sessionId}/answer', [OnboardingController::class, 'answer'])
         ->whereUuid('sessionId');
+
+    Route::get('/admin/clients/{investorId}/portfolio', [PortfolioController::class, 'show'])
+        ->whereUuid('investorId');
+    Route::post('/admin/clients/{investorId}/portfolio/recommendations', [PortfolioController::class, 'recommend'])
+        ->whereUuid('investorId');
+    Route::post('/admin/clients/{investorId}/portfolio/executions', [PortfolioController::class, 'execute'])
+        ->whereUuid('investorId');
 });
