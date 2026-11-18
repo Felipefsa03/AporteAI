@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Domain\Allocation;
 
 use App\Domain\MarketData\FreshnessPolicy;
+use App\Domain\MarketData\MarketDataException;
 use App\Domain\MarketData\SourceCatalog;
 use App\Domain\Onboarding\AdvisoryAuthorization;
 use App\Domain\Onboarding\ComplianceException;
+use App\Domain\Onboarding\SuitabilityPolicy;
 use App\Models\AuditEvent;
 use App\Models\Instrument;
 use App\Models\MarketQuote;
@@ -52,10 +54,14 @@ final class AllocationEngine
 
         $reserve = max(0, (int) ($context['reserve_cents'] ?? 0));
         $debts = max(0, (int) ($context['debts_cents'] ?? 0));
-        $available = $budgetCents - $reserve - $debts;
+        $availableCents = $budgetCents - $reserve - $debts;
         $profile = (string) $assessment->classification;
 
-        if ($available <= 0 || ($context['financial_changes'] ?? false) === true) {
+        if (! in_array($profile, SuitabilityPolicy::PROFILES, true)) {
+            return $this->cashOnly('unknown_profile', $budgetCents);
+        }
+
+        if ($availableCents <= 0 || ($context['financial_changes'] ?? false) === true) {
             return $this->cashOnly('liquidity_or_reserve_first', $budgetCents);
         }
 
@@ -68,11 +74,23 @@ final class AllocationEngine
             $quote = $candidate['quote'];
             $rule = config('allocation.universe.'.$instrument->symbol);
 
-            if (! is_array($rule) || (int) $rule['risk_bps'] > $maxRiskBps) {
+            if ($instrument->status !== 'active'
+                || ! is_array($rule)
+                || ! isset($rule['risk_bps'], $rule['source'])
+                || ! is_numeric($rule['risk_bps'])
+                || ! is_string($rule['source'])
+                || (int) $rule['risk_bps'] > $maxRiskBps) {
                 continue;
             }
 
-            $source = $this->sources->get((string) $rule['source']);
+            // Fonte ausente, sem licenca ou invalida reduz o universo; nunca expoe excecao ao caller.
+            try {
+                $source = $this->sources->get($rule['source']);
+            } catch (MarketDataException) {
+                $this->audit($assessment, 'allocation.source_invalid', ['symbol' => $instrument->symbol]);
+                continue;
+            }
+
             if ($quote->source_id !== $source['id'] || $quote->quality_status !== 'approved') {
                 continue;
             }
@@ -102,15 +120,18 @@ final class AllocationEngine
         $perInstrument = intdiv($investedBps, count($eligible));
         $targets = [];
         $allocatedBps = 0;
+        $investedCents = 0;
         $previousCumulative = 0;
 
         foreach ($eligible as $index => $candidate) {
             $bps = $perInstrument + ($index === count($eligible) - 1 ? $investedBps % count($eligible) : 0);
             $cumulative = $previousCumulative + $bps;
-            $amount = intdiv($budgetCents * $cumulative, 10000)
-                - intdiv($budgetCents * $previousCumulative, 10000);
+            // A reserva e as dividas permanecem em CASH: somente o disponivel pode ser investido.
+            $amount = intdiv($availableCents * $cumulative, 10000)
+                - intdiv($availableCents * $previousCumulative, 10000);
             $previousCumulative = $cumulative;
             $allocatedBps += $bps;
+            $investedCents += $amount;
 
             $targets[] = [
                 'symbol' => $candidate['symbol'],
@@ -128,14 +149,21 @@ final class AllocationEngine
         $targets[] = [
             'symbol' => 'CASH',
             'bps' => $cashBps,
-            'amount_cents' => $budgetCents - intdiv($budgetCents * $allocatedBps, 10000),
+            'amount_cents' => $budgetCents - $investedCents,
             'risk_bps' => 0,
             'source' => 'internal/rule',
             'as_of' => $now->format(DATE_ATOM),
             'rule_version' => self::RULE_VERSION,
         ];
 
-        $this->audit($assessment, 'allocation.generated', ['profile' => $profile]);
+        $this->audit($assessment, 'allocation.generated', [
+            'profile' => $profile,
+            'budget_cents' => $budgetCents,
+            'reserve_cents' => $reserve,
+            'debts_cents' => $debts,
+            'available_cents' => $availableCents,
+            'invested_cents' => $investedCents,
+        ]);
 
         return Allocation::make('invest', 'deterministic_allocation', self::RULE_VERSION, $targets);
     }

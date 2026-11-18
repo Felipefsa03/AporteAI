@@ -38,7 +38,8 @@ final class AdminAuthenticator
         }
 
         if ($user->mfa_enabled) {
-            $secret = Crypt::decryptString($user->mfa_secret_encrypted);
+            // encrypt() serializa o valor; decryptString() nao desfaz a serializacao.
+            $secret = Crypt::decrypt($user->mfa_secret_encrypted);
             if ($mfaCode === null || ! Totp::verify($secret, $mfaCode)) {
                 $this->audit('admin.mfa.failed', $user->id, $traceId);
                 throw new InvalidCredentials('Codigo MFA invalido.');

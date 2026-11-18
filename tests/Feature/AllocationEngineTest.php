@@ -139,11 +139,19 @@ final class AllocationEngineTest extends TestCase
             'email' => 'diego-'.Str::random(6).'@example.test',
         ]);
 
+        $conservative = $classification === 'conservative';
+
         return SuitabilityAssessment::query()->create([
             'id' => (string) Str::uuid(),
             'investor_id' => $investor->id,
             'version' => 1,
-            'answers' => ['restrictions' => []],
+            'answers' => [
+                'objective' => 'growth',
+                'horizon' => $conservative ? 'short' : 'long',
+                'knowledge' => $conservative ? 'limited' : 'intermediate',
+                'liquidity' => 'monthly',
+                'restrictions' => [],
+            ],
             'classification' => $classification,
             'status' => 'valid',
             'assessed_at' => new DateTimeImmutable('2026-11-17T10:00:00+00:00'),
