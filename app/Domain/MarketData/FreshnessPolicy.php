@@ -19,4 +19,10 @@ final class FreshnessPolicy
 
         return 'valid';
     }
+
+    /** Dados com data futura sao rejeitados na ingestao, nao apenas marcados como vencidos. */
+    public function isFuture(DateTimeImmutable $asOf, DateTimeImmutable $now): bool
+    {
+        return $asOf > $now;
+    }
 }
