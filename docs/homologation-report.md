@@ -29,3 +29,11 @@ php artisan test --testsuite=Feature
 - Log completo de `php artisan test --testsuite=Feature` com todos os cenários verdes.
 - Verificação de que nenhuma PII aparece em logs técnicos (`DataRightsTest` já asserting audit metadata).
 - Confirmação de que o bloqueio financeiro precede qualquer chamada de LLM (fake gateway com `calls=0`).
+
+## Adendo 18/11/2026
+
+O parágrafo de status acima refletia o executor da data de redação. A base passou a
+dispor de PHP, Composer, PostgreSQL 16 e workflow de CI; a suíte executável e os
+resultados da integração estão registrados em
+[base executável](execution-baseline-2026-11-18.md). Este adendo não altera a matriz
+de cenários nem transforma testes automatizados em homologação integrada.

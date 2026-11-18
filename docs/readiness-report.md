@@ -27,3 +27,12 @@ Piloto controlado do MVP AporteAI v1.2 com dados fictícios. Não é liberação
 ## Conclusão do executor
 
 O código do piloto, os runbooks e o plano de rollback estão entregues. A prontidão comercial **não** pode ser afirmada por este executor: ela depende de execução verde no CI, revisão humana e decisão formal do card GO.
+
+## Adendo 18/11/2026
+
+Os itens 1 e 2 de "Riscos em aberto" descreviam o ambiente da redação original e
+foram superados pela base integrada: runtime local disponível, CI versionado e suíte
+executada com evidência. O estado auditado, o resultado do gate e os riscos restantes
+da migração de auditoria estão em
+[base executável](execution-baseline-2026-11-18.md). Os itens 3 e 4 permanecem,
+assim como a conclusão: prontidão comercial depende de decisão humana.

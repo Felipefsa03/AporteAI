@@ -83,3 +83,10 @@ Fora de escopo do ARC: implementação de código, credenciais reais, contratos 
 - Durante a iteração: validação de documentos e links internos, revisão de regras críticas contra RB-001…RB-033 e A1…A16.
 - Antes da integração: gate completo do repositório, com revisão humana para mudanças de alto risco.
 - Antes do go-live: checklist de produção, restore testado, fontes licenciadas e gates documentados.
+
+## Adendo 18/11/2026
+
+O "Estado conferido" e o commit citado no topo são registros históricos da sessão S0.
+A base técnica auditada em 18/11/2026, com CI e correções REG, está descrita em
+[base executável](execution-baseline-2026-11-18.md). Nenhuma data deste plano foi
+reescrita; a ordem de dependências e a ressalva sobre GO permanecem válidas.
