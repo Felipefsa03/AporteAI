@@ -115,6 +115,10 @@ final class BotActivationTest extends TestCase
 
     private function admin(): AdminUser
     {
+        if ($owner = AdminUser::query()->where('active', true)->first()) {
+            return $owner;
+        }
+
         return AdminUser::query()->create([
             'id' => (string) Str::uuid(),
             'email' => 'o'.Str::random(6).'@x.test',

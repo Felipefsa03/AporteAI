@@ -45,7 +45,7 @@ final class P0HomologationTest extends TestCase
         $llm = $this->fakeLlm();
         $investor = $this->investor('C');
         $subscription = $this->subscription($investor, 'past_due', 'suspended');
-        $this->payment($subscription);
+        $this->payment($subscription, 2990, 'open');
         $now = new DateTimeImmutable('2026-11-17T12:00:00+00:00');
 
         $blocked = app(ConversationOrchestrator::class)->handle($investor, 'Fazer aporte R$ 800', $now);
@@ -139,7 +139,7 @@ final class P0HomologationTest extends TestCase
 
     private function investor(string $suffix): Investor
     {
-        $admin = AdminUser::query()->create([
+        $admin = AdminUser::query()->where('active', true)->first() ?? AdminUser::query()->create([
             'id' => (string) Str::uuid(),
             'email' => 'owner'.Str::random(6).'@example.test',
             'password_hash' => Hash::make('x'),

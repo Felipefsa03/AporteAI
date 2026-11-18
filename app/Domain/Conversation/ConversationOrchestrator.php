@@ -37,7 +37,7 @@ final class ConversationOrchestrator
             }
         }
 
-        return $decision->toArray() + ['reply' => $reply, 'llm_calls' => $calls];
+        return array_replace($decision->toArray(), ['reply' => $reply, 'llm_calls' => $calls]);
     }
 
     public function decide(Investor $investor, string $message, DateTimeImmutable $now): AccessDecision

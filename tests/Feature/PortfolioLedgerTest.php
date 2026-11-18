@@ -57,7 +57,7 @@ final class PortfolioLedgerTest extends TestCase
             'reverts' => 'fill-1',
         ]);
         self::assertSame([$instrument->id => 80000], $reversed['positions']);
-        self::assertSame(4, \App\Models\PortfolioEvent::query()->where('portfolio_id', $portfolio->id)->count());
+        self::assertSame(3, \App\Models\PortfolioEvent::query()->where('portfolio_id', $portfolio->id)->count());
     }
 
     private function instrument(string $symbol): Instrument

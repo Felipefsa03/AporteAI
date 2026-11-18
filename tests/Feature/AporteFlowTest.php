@@ -49,6 +49,8 @@ final class AporteFlowTest extends TestCase
         $service = app(AporteFlowService::class);
         $session = $service->start($this->assessment()->investor, 80000, $now);
 
+        $staleSession = clone $session;
+
         foreach (['objective' => 'renda', 'horizon' => 'longo', 'tolerance' => 'moderada', 'financial_changes' => 'nao'] as $question => $value) {
             $result = $service->answer($session, $question, $value, 'key-'.$question, $now);
             $session = $result['session'];
@@ -58,7 +60,7 @@ final class AporteFlowTest extends TestCase
         self::assertSame([], $result['pending']);
         self::assertSame('PHASE2_READY', $session->phase);
 
-        $repeated = $service->answer($session, 'objective', 'alterado', 'key-objective', $now);
+        $repeated = $service->answer($staleSession, 'objective', 'alterado', 'key-objective', $now);
         self::assertTrue($repeated['complete']);
         self::assertSame('PHASE2_READY', $repeated['session']->phase);
         self::assertSame('renda', $repeated['session']->answers['objective']);

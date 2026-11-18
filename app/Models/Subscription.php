@@ -12,6 +12,12 @@ final class Subscription extends Model
 
     public $incrementing = false;
 
+    protected $attributes = [
+        'status' => 'pending_activation',
+        'access_status' => 'suspended',
+        'grace_days' => 0,
+    ];
+
     protected $fillable = [
         'id',
         'investor_id',

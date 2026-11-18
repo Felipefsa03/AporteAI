@@ -48,6 +48,10 @@ final class ReportGeneratorTest extends TestCase
         self::assertStringContainsString('AporteAI REALIZADO', $report->png);
         self::assertStringContainsString('2026-11-17T15:30:00+00:00', $report->png);
         self::assertSame(1, Report::query()->count());
+        $persisted = $report->fresh();
+        self::assertSame($report->png, $persisted->png);
+        self::assertSame($report->png, $persisted->png); // Repeated reads rewind the LOB.
+
     }
 
     public function testA7IncompleteDataGetsWarningInsteadOfFalsePrecision(): void
