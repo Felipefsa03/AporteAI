@@ -4,19 +4,27 @@ declare(strict_types=1);
 
 namespace App\Domain\MarketData;
 
+use App\Domain\MarketData\Adapters\NormalizedRecord;
 use App\Models\AuditEvent;
 use App\Models\Instrument;
 use App\Models\MarketQuote;
 use DateTimeImmutable;
-use Exception;
+use DateTimeZone;
 use Illuminate\Support\Str;
 
 /**
  * RB-010/A5: nunca inventa preco. Registros invalidos sao rejeitados e dados vencidos
  * sao armazenados com quality_status=stale, impedidos de alimentar recomendacoes.
+ * Indicadores macroeconomicos nunca viram cotacao de instrumento (nao e CDB).
  */
 final class MarketDataIngestor
 {
+    private const QUALITY_APPROVED = 'approved';
+
+    private const QUALITY_STALE = 'stale';
+
+    private const QUALITY_INDICATOR = 'indicator';
+
     public function __construct(
         private readonly SourceCatalog $catalog,
         private readonly FreshnessPolicy $freshness,
@@ -24,30 +32,39 @@ final class MarketDataIngestor
     }
 
     /**
-     * @param array<mixed> $payload
+     * @param list<NormalizedRecord> $records
      * @return array{stored: int, stale: int, rejected: int}
      */
-    public function ingest(string $sourceKey, array $payload, DateTimeImmutable $now): array
+    public function ingest(string $sourceKey, array $records, DateTimeImmutable $now): array
     {
         $source = $this->catalog->get($sourceKey);
+        $this->assertSchema($source);
         $stats = ['stored' => 0, 'stale' => 0, 'rejected' => 0];
+        $reasons = [];
 
-        foreach ($payload as $item) {
+        foreach ($records as $record) {
+            $reason = 'record';
             try {
-                [$symbol, $asOf, $price] = $this->normalize($source, $item);
+                $this->assertRecord($record, $now, $reason);
             } catch (MarketDataException) {
                 $stats['rejected']++;
+                $reasons[$reason] = ($reasons[$reason] ?? 0) + 1;
 
                 continue;
             }
 
-            $status = $this->freshness->status($asOf, (int) ($source['max_age_seconds'] ?? 0), $now);
+            $asOf = $record->asOf;
+            $dataKind = (string) $source['data_kind'];
+            $status = $this->freshness->status($asOf, (int) $source['max_age_seconds'], $now);
+            $quality = $dataKind === 'indicator'
+                ? self::QUALITY_INDICATOR
+                : ($status === 'valid' ? self::QUALITY_APPROVED : self::QUALITY_STALE);
 
             $instrument = Instrument::query()->firstOrCreate(
-                ['symbol' => $symbol],
+                ['symbol' => $record->symbol],
                 [
                     'id' => (string) Str::uuid(),
-                    'instrument_type' => $this->instrumentType((string) $source['provider']),
+                    'instrument_type' => $this->instrumentType($source),
                     'status' => 'active',
                 ],
             );
@@ -60,90 +77,108 @@ final class MarketDataIngestor
                 ],
                 [
                     'id' => (string) Str::uuid(),
-                    'price' => $price,
-                    'quality_status' => $status,
+                    'price' => $record->price,
+                    'quality_status' => $quality,
                     'captured_at' => $now,
                     'metadata' => [
                         'provider' => $source['provider'],
                         'dataset' => $source['dataset'],
+                        'adapter' => $source['adapter'],
                         'license' => $source['license'],
+                        'license_evidence' => $source['license_evidence'],
+                        'redistribution_allowed' => (bool) $source['redistribution_allowed'],
+                        'source_key' => $sourceKey,
+                        'data_kind' => $dataKind,
+                        'unit' => $source['unit'],
+                        'timezone' => $source['timezone'],
                     ],
                 ],
             );
 
-            $stats[$status === 'valid' ? 'stored' : 'stale']++;
+            $stats[$quality === self::QUALITY_STALE ? 'stale' : 'stored']++;
         }
 
         $this->catalog->markChecked($sourceKey, $now);
-        $this->audit((string) $source['id'], $stats);
+        $this->audit((string) $source['id'], 'market.ingested', $stats + ['data_kind' => $source['data_kind']]);
+        if ($reasons !== []) {
+            $this->audit((string) $source['id'], 'market.ingestion_rejected', $reasons);
+        }
 
         return $stats;
     }
 
-    /**
-     * @param array<string, mixed> $source
-     * @return array{0: string, 1: DateTimeImmutable, 2: string}
-     */
-    private function normalize(array $source, mixed $item): array
+    private function assertRecord(NormalizedRecord $record, DateTimeImmutable $now, string &$reason): void
     {
-        if (! is_array($item)) {
-            throw new MarketDataException('Registro de mercado invalido.');
+        if (trim($record->symbol) === '') {
+            $reason = 'record';
+
+            throw new MarketDataException('Registro oficial sem simbolo.');
         }
 
-        $symbol = $source['adapter'] === 'bcb'
-            ? (string) ($source['symbol'] ?? '')
-            : (string) ($item[$source['symbol_field']] ?? '');
-        $rawDate = (string) ($item[$source['date_field']] ?? '');
-        $rawPrice = $item[$source['price_field']] ?? null;
+        if ($this->freshness->isFuture($record->asOf, $now)) {
+            $reason = 'future';
 
-        if ($symbol === '' || $rawDate === '') {
-            throw new MarketDataException('Registro de mercado sem simbolo ou data.');
+            throw new MarketDataException('Data futura nao pode ser ingerida.');
         }
 
-        try {
-            $asOf = DateTimeImmutable::createFromFormat((string) $source['date_format'], $rawDate);
-            if ($asOf === false) {
-                $asOf = new DateTimeImmutable($rawDate);
-            } elseif (! str_contains((string) $source['date_format'], 'H')) {
-                $asOf = $asOf->setTime(0, 0);
-            }
-        } catch (Exception) {
-            throw new MarketDataException('Data de mercado invalida.');
-        }
+        if (! is_numeric($record->price) || (float) $record->price <= 0) {
+            $reason = 'price';
 
-        if (is_string($rawPrice)) {
-            $rawPrice = str_replace(',', '.', $rawPrice);
+            throw new MarketDataException('Preco invalido no registro oficial.');
         }
-
-        if (! is_numeric($rawPrice) || (float) $rawPrice <= 0) {
-            throw new MarketDataException('Preco de mercado invalido.');
-        }
-
-        return [$symbol, $asOf, (string) (float) $rawPrice];
     }
 
-    private function instrumentType(string $provider): string
+    /** @param array<string, mixed> $source */
+    private function assertSchema(array $source): void
     {
-        return match ($provider) {
-            'bcb' => 'indicator',
+        if (! in_array($source['data_kind'] ?? null, ['indicator', 'price'], true)) {
+            throw new MarketDataException('Fonte sem natureza de dado declarada (indicator/price).');
+        }
+
+        if (! in_array($source['unit'] ?? null, ['percent', 'brl'], true)) {
+            throw new MarketDataException('Fonte sem unidade declarada (percent/brl).');
+        }
+
+        if (! is_string($source['timezone'] ?? null)
+            || ! in_array($source['timezone'], DateTimeZone::listIdentifiers(), true)) {
+            throw new MarketDataException('Fonte sem timezone explicita e valida.');
+        }
+
+        if (! is_string($source['license_evidence'] ?? null) || trim($source['license_evidence']) === '') {
+            throw new MarketDataException('Fonte sem evidencia de licenca documentada.');
+        }
+
+        if (! is_string($source['date_format'] ?? null) || $source['date_format'] === '') {
+            throw new MarketDataException('Fonte sem formato de data declarado.');
+        }
+    }
+
+    /** @param array<string, mixed> $source */
+    private function instrumentType(array $source): string
+    {
+        if ($source['data_kind'] === 'indicator') {
+            return 'indicator';
+        }
+
+        return match ($source['provider']) {
             'tesouro' => 'treasury',
             'cvm' => 'fund',
             default => 'security',
         };
     }
 
-    /** @param array{stored: int, stale: int, rejected: int} $stats */
-    private function audit(string $sourceKey, array $stats): void
+    /** @param array<string, int|string> $metadata */
+    private function audit(string $sourceKey, string $action, array $metadata): void
     {
         AuditEvent::query()->create([
             'id' => (string) Str::uuid(),
             'actor_type' => 'system',
             'actor_id' => 'market-data-ingestor',
-            'action' => 'market.ingested',
+            'action' => $action,
             'subject_type' => 'data_source',
             'subject_id' => $sourceKey,
             'trace_id' => (string) Str::uuid(),
-            'metadata' => $stats,
+            'metadata' => $metadata,
             'occurred_at' => now(),
         ]);
     }
