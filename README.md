@@ -10,13 +10,25 @@ sob `/api/v1/admin` e exigem o cabeçalho `Authorization: Bearer <token>` após 
 
 ### Execução local
 
+Consulte o [ambiente local reproduzível](docs/local-environment.md). Em um checkout
+limpo com PHP 8.3+, Composer 2 e PostgreSQL 16 disponíveis:
+
 ```bash
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate
-composer test
+./scripts/bootstrap-local.sh
 ```
+
+O script valida o ambiente, instala o lockfile, aplica as migrações e executa o
+`PilotSeeder`, que pode ser repetido sem duplicar dados fictícios. Nenhum `.env`
+é criado no projeto: a `APP_KEY` fica em `/tmp/opencode/aporteai-env-runtime.env`,
+modo `600`, fora de worktrees. Para verificar a fila sem tocar `whatsapp` e rodar
+os testes:
+
+```bash
+./scripts/verify-local-queue.sh
+DB_DATABASE=aporteai_testing vendor/bin/phpunit --filter PilotSeederTest
+```
+
+Nenhum segredo, provedor externo ou credencial de cliente é necessário.
 
 ### Delimitação
 

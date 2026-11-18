@@ -49,49 +49,51 @@ final class PilotSeeder extends Seeder
         $this->payment($suspended, 2990, 'open', 2, $now);
         $this->subscription($investors['Carla'], 'active', 'grace', 'paid', 9900, $now);
 
-        $portfolio = Portfolio::query()->create([
-            'id' => (string) Str::uuid(),
-            'investor_id' => $investors['Ana']->id,
-            'name' => 'Carteira principal',
-            'status' => 'active',
-        ]);
+        $portfolio = Portfolio::query()->firstOrCreate(
+            ['investor_id' => $investors['Ana']->id, 'name' => 'Carteira principal'],
+            [
+                'id' => (string) Str::uuid(),
+                'status' => 'active',
+            ],
+        );
         $instrument = Instrument::query()->where('symbol', 'TESOURO-IPCA')->firstOrFail();
-        PortfolioEvent::query()->create([
-            'id' => (string) Str::uuid(),
-            'portfolio_id' => $portfolio->id,
-            'investor_id' => $investors['Ana']->id,
-            'event_type' => 'ORDER_CONFIRMED',
-            'external_id' => 'pilot-order-ana-1',
-            'instrument_id' => $instrument->id,
-            'amount_cents' => 80000,
-            'affects_positions' => true,
-            'metadata' => ['source' => 'pilot'],
-            'occurred_at' => $now,
-        ]);
+        PortfolioEvent::query()->firstOrCreate(
+            ['portfolio_id' => $portfolio->id, 'external_id' => 'pilot-order-ana-1'],
+            [
+                'id' => (string) Str::uuid(),
+                'investor_id' => $investors['Ana']->id,
+                'event_type' => 'ORDER_CONFIRMED',
+                'instrument_id' => $instrument->id,
+                'amount_cents' => 80000,
+                'affects_positions' => true,
+                'metadata' => ['source' => 'pilot'],
+                'occurred_at' => $now,
+            ],
+        );
 
-        AporteSession::query()->create([
-            'id' => (string) Str::uuid(),
-            'investor_id' => $investors['Ana']->id,
-            'amount_cents' => 80000,
-            'phase' => 'COMPLETED',
-            'answers' => ['objective' => 'renda', 'horizon' => 'longo', 'tolerance' => 'moderada', 'financial_changes' => 'nao'],
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+        AporteSession::query()->firstOrCreate(
+            ['investor_id' => $investors['Ana']->id, 'amount_cents' => 80000, 'phase' => 'COMPLETED'],
+            [
+                'id' => (string) Str::uuid(),
+                'answers' => ['objective' => 'renda', 'horizon' => 'longo', 'tolerance' => 'moderada', 'financial_changes' => 'nao'],
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+        );
 
-        ReviewCase::query()->create([
-            'id' => (string) Str::uuid(),
-            'investor_id' => $investors['Bruno']->id,
-            'subject_type' => 'billing_gate',
-            'subject_id' => (string) Str::uuid(),
-            'reason' => 'pilot_suspended_nonpayment',
-            'status' => 'pending',
-            'critical' => true,
-            'snapshot' => ['access_status' => 'suspended'],
-            'sources' => [],
-            'rules' => ['rule_version' => 'pilot-2026.11-v1'],
-            'created_at' => $now,
-        ]);
+        ReviewCase::query()->firstOrCreate(
+            ['investor_id' => $investors['Bruno']->id, 'subject_type' => 'billing_gate', 'reason' => 'pilot_suspended_nonpayment'],
+            [
+                'id' => (string) Str::uuid(),
+                'subject_id' => (string) Str::uuid(),
+                'status' => 'pending',
+                'critical' => true,
+                'snapshot' => ['access_status' => 'suspended'],
+                'sources' => [],
+                'rules' => ['rule_version' => 'pilot-2026.11-v1'],
+                'created_at' => $now,
+            ],
+        );
     }
 
     private function owner(DateTimeImmutable $now): AdminUser
