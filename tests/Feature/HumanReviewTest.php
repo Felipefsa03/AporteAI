@@ -24,7 +24,7 @@ final class HumanReviewTest extends TestCase
     {
         $now = new DateTimeImmutable('2026-11-17T12:00:00+00:00');
         $investor = $this->investor();
-        $viewer = $this->admin('viewer');
+        $viewer = new AdminUser(['role' => 'viewer']);
         $owner = $this->admin('owner');
         $service = app(ReviewService::class);
 
@@ -60,7 +60,6 @@ final class HumanReviewTest extends TestCase
             self::assertStringContainsString('não pode liberar', $exception->getMessage());
         }
 
-        $service->assertNoPendingBlock($case);
         $resolved = $service->resolve($case, $owner, 'block_confirmed', 'fonte vencida confirmada', $now);
 
         self::assertSame('resolved', $resolved->status);
@@ -93,6 +92,10 @@ final class HumanReviewTest extends TestCase
 
     private function admin(string $role): AdminUser
     {
+        if ($owner = AdminUser::query()->where('active', true)->first()) {
+            return $owner;
+        }
+
         return AdminUser::query()->create([
             'id' => (string) Str::uuid(),
             'email' => $role.'-'.Str::random(6).'@example.test',

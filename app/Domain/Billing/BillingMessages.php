@@ -20,7 +20,7 @@ final class BillingMessages
             : 'Responda **Regularizar pagamento** e enviaremos as orientações para quitar sua assinatura.';
 
         return "Olá, {$firstName}! 👋\n"
-            ."Identificamos que sua assinatura da **{$product}** venceu em **{$due}** e o pagamento ainda está pendente.\n"
+            ."Identificamos que sua assinatura da **{$product}** venceu em {$due} e o pagamento ainda está pendente.\n"
             ."Por isso, os serviços de análises, aportes e relatórios estão temporariamente pausados.\n"
             .$line."\n"
             ."Se você já pagou, responda **Já paguei** para verificarmos. Se precisar de ajuda, envie **Falar com atendimento**.\n"

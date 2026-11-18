@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 final class SuitabilityAssessment extends Model
 {
+    public function investor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Investor::class);
+    }
+
     public $timestamps = false;
 
     protected $keyType = 'string';

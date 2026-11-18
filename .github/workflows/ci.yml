@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: PHP 8.3 / PostgreSQL 16
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: aporteai_testing
+          POSTGRES_USER: aporteai
+          # Disposable runner database only; no production credentials.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U aporteai -d aporteai_testing"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: aporteai_testing
+      DB_USERNAME: aporteai
+      DB_PASSWORD: ''
+      ADVISORY_AUTHORIZED: 'false'
+      PILOT_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_pgsql, bcmath, dom, xml
+          tools: composer:v2
+          coverage: none
+      - name: Validate dependency manifest and lock
+        run: composer validate --strict
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Check platform requirements
+        run: composer check-platform-reqs
+      - name: PHP syntax
+        run: find app bootstrap config database routes tests -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Unit tests
+        run: composer test -- --testsuite Unit --log-junit build/unit.xml
+      - name: Feature tests
+        if: ${{ !cancelled() && hashFiles('vendor/autoload.php') != '' }}
+        run: composer test -- --testsuite Feature --log-junit build/feature.xml
+      - name: Preserve test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: phpunit-results
+          path: build/*.xml
+          if-no-files-found: warn
+          retention-days: 14

@@ -165,6 +165,8 @@ final class PilotSeeder extends Seeder
                 'investor_id' => $investor->id,
                 'requested_by_admin_id' => $investor->created_by_admin_id,
                 'status' => 'delivered',
+                'template_name' => config('whatsapp.templates.activation'),
+                'bot_phone_number_id' => config('whatsapp.bot.phone_number_id'),
                 'requested_at' => $now,
                 'delivered_at' => $now,
             ],

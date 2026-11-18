@@ -15,7 +15,7 @@ composer install
 cp .env.example .env
 php artisan key:generate
 php artisan migrate
-php artisan test
+composer test
 ```
 
 ### Delimitação
@@ -43,3 +43,10 @@ rejeitados — nenhum preço é inventado.
 A assinatura registra separadamente `status` (cobrança) e `access_status` (acesso):
 vencimento sem quitação conciliada suspende o acesso sem cancelar o contrato anual.
 Webhooks são idempotentes por `external_id` e `processing` nunca é tratado como quitação.
+
+## Integração contínua
+
+`composer test` executa PHPUnit. O workflow roda Unit e Feature em PHP 8.3 e
+PostgreSQL 16 e preserva JUnit mesmo em falhas. Consulte
+[verificação real e bloqueios conhecidos](docs/ci-verification.md). CI vermelho
+não representa homologação técnica nem autorização comercial.

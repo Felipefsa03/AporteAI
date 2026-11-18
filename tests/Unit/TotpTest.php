@@ -6,15 +6,14 @@ namespace Tests\Unit;
 
 use App\Domain\AdminAuth\Totp;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 final class TotpTest extends TestCase
 {
     /** Vetores RFC 6238 para HMAC-SHA1, truncados a 6 digitos. */
     private const SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
 
-    /**
-     * @dataProvider rfc6238Vectors
-     */
+    #[DataProvider('rfc6238Vectors')]
     public function testMatchesRfc6238Vectors(int $timestamp, string $expected): void
     {
         self::assertSame($expected, Totp::code(self::SECRET, $timestamp));

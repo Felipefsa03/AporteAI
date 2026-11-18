@@ -82,6 +82,8 @@ final class DashboardMetricsTest extends TestCase
                 'requested_by_admin_id' => $investor->created_by_admin_id,
                 'idempotency_key' => 'activation-'.$investor->id,
                 'status' => 'delivered',
+                'template_name' => config('whatsapp.templates.activation'),
+                'bot_phone_number_id' => config('whatsapp.bot.phone_number_id'),
                 'requested_at' => $now,
                 'delivered_at' => $now,
             ]);
@@ -143,7 +145,7 @@ final class DashboardMetricsTest extends TestCase
 
     private function investor(string $name): Investor
     {
-        $admin = AdminUser::query()->create([
+        $admin = AdminUser::query()->where('active', true)->first() ?? AdminUser::query()->create([
             'id' => (string) Str::uuid(),
             'email' => 'owner-'.Str::random(6).'@example.test',
             'password_hash' => Hash::make('x'),
