@@ -54,22 +54,31 @@ final class AporteFlowService
             throw new AporteException('Pergunta de Fase 1 desconhecida.');
         }
 
-        $answers = is_array($session->answers) ? $session->answers : [];
-        if (($answers['_idempotency'] ?? null) === $idempotencyKey) {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($session, $question, $value, $idempotencyKey, $now): array {
+            $session = AporteSession::query()->lockForUpdate()->findOrFail($session->id);
+            $answers = is_array($session->answers) ? $session->answers : [];
+            if (($answers['_idempotency'] ?? null) === $idempotencyKey
+                || in_array($idempotencyKey, $answers['_processed_keys'] ?? [], true)) {
+                return $this->progress($session, $answers);
+            }
+
+            $answers[$question] = $value;
+            if (isset($answers['_idempotency'])) {
+                $answers['_processed_keys'][] = $answers['_idempotency'];
+            }
+            $answers['_processed_keys'][] = $idempotencyKey;
+            $answers['_processed_keys'] = array_values(array_unique($answers['_processed_keys']));
+            $answers['_idempotency'] = $idempotencyKey;
+            $complete = count(array_intersect(self::QUESTIONS, array_keys($answers))) === count(self::QUESTIONS);
+
+            $session->forceFill([
+                'answers' => $answers,
+                'phase' => $complete ? 'PHASE2_READY' : 'PHASE1',
+                'updated_at' => $now,
+            ])->save();
+
             return $this->progress($session, $answers);
-        }
-
-        $answers[$question] = $value;
-        $answers['_idempotency'] = $idempotencyKey;
-        $complete = count(array_intersect(self::QUESTIONS, array_keys($answers))) === count(self::QUESTIONS);
-
-        $session->forceFill([
-            'answers' => $answers,
-            'phase' => $complete ? 'PHASE2_READY' : 'PHASE1',
-            'updated_at' => $now,
-        ])->save();
-
-        return $this->progress($session, $answers);
+        });
     }
 
     /**

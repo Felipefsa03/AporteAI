@@ -26,7 +26,8 @@ final class PilotSeederTest extends TestCase
 
         self::assertSame(3, Investor::query()->count());
         self::assertSame(3, Investor::query()->where('phone_e164', 'like', '+5575992699%')->count());
-        self::assertSame(3, MarketQuote::query()->count());
+        self::assertSame(2, MarketQuote::query()->count());
+        self::assertSame(['CDB-LIQUIDEZ', 'TESOURO-IPCA'], \App\Models\Instrument::query()->orderBy('symbol')->pluck('symbol')->all());
         self::assertSame(1, AporteSession::query()->where('phase', 'COMPLETED')->count());
         self::assertSame(1, ReviewCase::query()->where('status', 'pending')->where('critical', true)->count());
         self::assertSame(0, Investor::query()->where('lifecycle_status', 'deletion_requested')->count());

@@ -15,7 +15,7 @@ final class MessageClassifier
 
     public function normalize(string $message): string
     {
-        $upper = strtoupper(strtr(trim($message), self::ACCENTS));
+        $upper = strtr(mb_strtoupper(trim($message), 'UTF-8'), self::ACCENTS);
 
         return preg_replace('/\s+/', ' ', $upper) ?? $upper;
     }

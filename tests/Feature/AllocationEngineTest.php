@@ -103,7 +103,7 @@ final class AllocationEngineTest extends TestCase
     /** @return array{instrument: Instrument, quote: MarketQuote} */
     private function candidate(string $symbol, DateTimeImmutable $asOf): array
     {
-        $source = app(SourceCatalog::class)->get('bcb_selic');
+        $source = app(SourceCatalog::class)->get((string) config('allocation.universe.'.$symbol.'.source'));
         $instrument = Instrument::query()->firstOrCreate(
             ['symbol' => $symbol],
             ['id' => (string) Str::uuid(), 'instrument_type' => 'renda_fixa', 'status' => 'active'],
