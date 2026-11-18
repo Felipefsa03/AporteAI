@@ -29,7 +29,7 @@ final class CvmInfDiarioZipAdapter implements SourceAdapter
             throw new MarketDataException('ZIP da CVM excede o limite de download.');
         }
 
-        $temporary = tempnam('/tmp/opencode', 'cvm-inf-diario-');
+        $temporary = tempnam(sys_get_temp_dir(), 'cvm-inf-diario-');
         if ($temporary === false) {
             throw new MarketDataException('Nao foi possivel preparar o arquivo temporario da CVM.');
         }

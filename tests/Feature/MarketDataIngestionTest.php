@@ -12,7 +12,6 @@ use App\Models\AuditEvent;
 use App\Models\Instrument;
 use App\Models\MarketQuote;
 use DateTimeImmutable;
-use DateTimeZone;
 use Illuminate\Console\Application as ConsoleApplication;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -38,12 +37,10 @@ final class MarketDataIngestionTest extends TestCase
         $quote = MarketQuote::query()->firstOrFail();
         self::assertSame('13.750000', $quote->price);
         self::assertSame('indicator', $quote->quality_status);
-        // Data brasileira preservada no timezone de Brasilia (-03:00), equivalente a 03:00 UTC.
-        self::assertSame('2026-11-17T00:00:00-03:00', $quote->as_of->format(DATE_ATOM));
-        self::assertSame(
-            '2026-11-17T03:00:00+00:00',
-            $quote->as_of->setTimezone(new DateTimeZone('UTC'))->format(DATE_ATOM),
-        );
+        // timestampTz guarda o instante canonico em UTC; a data/offset de Brasilia
+        // (-03:00), equivalente a 03:00 UTC, fica preservada na proveniencia.
+        self::assertSame('2026-11-17T03:00:00+00:00', $quote->as_of->format(DATE_ATOM));
+        self::assertSame('2026-11-17T00:00:00-03:00', $quote->metadata['as_of_local']);
         self::assertSame('indicator', $quote->metadata['data_kind']);
         self::assertSame('percent', $quote->metadata['unit']);
         self::assertSame('America/Sao_Paulo', $quote->metadata['timezone']);

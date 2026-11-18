@@ -54,6 +54,8 @@ final class MarketDataIngestor
             }
 
             $asOf = $record->asOf;
+            // timestampTz deve guardar o instante em UTC; o offset local fica na proveniencia.
+            $asOfUtc = $asOf->setTimezone(new DateTimeZone('UTC'));
             $dataKind = (string) $source['data_kind'];
             $status = $this->freshness->status($asOf, (int) $source['max_age_seconds'], $now);
             $quality = $dataKind === 'indicator'
@@ -73,7 +75,7 @@ final class MarketDataIngestor
                 [
                     'instrument_id' => $instrument->id,
                     'source_id' => $source['id'],
-                    'as_of' => $asOf,
+                    'as_of' => $asOfUtc,
                 ],
                 [
                     'id' => (string) Str::uuid(),
@@ -91,6 +93,9 @@ final class MarketDataIngestor
                         'data_kind' => $dataKind,
                         'unit' => $source['unit'],
                         'timezone' => $source['timezone'],
+                        // timestampTz normaliza o instante para UTC; preservamos a
+                        // data/offset original declarada pela fonte na proveniencia.
+                        'as_of_local' => $asOf->format(DATE_ATOM),
                     ],
                 ],
             );
