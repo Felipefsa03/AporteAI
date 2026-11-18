@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\AdminSession;
+use App\Models\AdminUser;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,6 +28,12 @@ final class EnsureAdminMfa
 
         if ($session === null || $session->mfa_completed_at === null) {
             return response()->json(['message' => 'Sessao do proprietario invalida ou expirada.'], 401);
+        }
+
+        // Sessao emitida antes da desativacao nao mantem acesso ao dashboard.
+        $admin = AdminUser::query()->find($session->admin_user_id);
+        if ($admin === null || $admin->active !== true) {
+            return response()->json(['message' => 'Conta do proprietario desativada.'], 401);
         }
 
         $request->attributes->set('admin_user_id', $session->admin_user_id);

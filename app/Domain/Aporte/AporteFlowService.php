@@ -10,6 +10,8 @@ use App\Domain\Portfolio\PortfolioLedger;
 use App\Models\AporteSession;
 use App\Models\Instrument;
 use App\Models\Investor;
+use App\Models\ReviewCase;
+use App\Models\SuitabilityAssessment;
 use DateTimeImmutable;
 use Illuminate\Support\Str;
 
@@ -97,11 +99,23 @@ final class AporteFlowService
         }
 
         $assessment = $context['assessment'] ?? null;
-        if (! $assessment instanceof \App\Models\SuitabilityAssessment) {
+        if (! $assessment instanceof SuitabilityAssessment) {
             throw new AporteException('Suitability válido é obrigatório para a Fase 2.');
         }
 
+        if ($assessment->investor_id !== $session->investor_id) {
+            throw new AporteException('Suitability de outro investidor não pode orientar esta sessão.');
+        }
+
+        $this->assertNoCriticalBlock($session->investor_id);
+
         $allocation = $this->engine->allocate($assessment, $session->amount_cents, $candidates, $context, $now);
+
+        // Proposta bloqueada nao chega ao LLM, nao gera explicacao e nao entra no livro de recomendacoes.
+        if ($allocation->status !== 'invest') {
+            throw new AporteException('Proposta bloqueada por compliance: '.$allocation->reason.'.');
+        }
+
         $explanation = $this->explainer->explain($session->investor, $allocation, $now);
         $portfolio = $this->ledger->getOrCreate($session->investor);
         $recommendation = $this->ledger->recordRecommendation(
@@ -132,6 +146,17 @@ final class AporteFlowService
             throw new AporteException('Nenhuma proposta validada para confirmar.');
         }
 
+        $proposalAllocation = $session->proposal['allocation'] ?? null;
+        if (! is_array($proposalAllocation) || ($proposalAllocation['status'] ?? null) !== 'invest') {
+            throw new AporteException('Somente propostas validadas podem gerar ordem.');
+        }
+
+        if ($amountCents <= 0 || $amountCents > $session->amount_cents) {
+            throw new AporteException('Valor da ordem fora do orçamento validado da sessão.');
+        }
+
+        $this->assertNoCriticalBlock($session->investor_id);
+
         $portfolio = $this->ledger->getOrCreate($session->investor);
         $result = $this->ledger->recordExecution(
             $portfolio,
@@ -148,6 +173,17 @@ final class AporteFlowService
         }
 
         return $result;
+    }
+
+    private function assertNoCriticalBlock(string $investorId): void
+    {
+        if (ReviewCase::query()
+            ->where('investor_id', $investorId)
+            ->where('critical', true)
+            ->where('status', 'pending')
+            ->exists()) {
+            throw new AporteException('Revisão crítica pendente: nenhuma proposta ou ordem pode avançar.');
+        }
     }
 
     /** @param array<string, mixed> $answers */
