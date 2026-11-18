@@ -37,3 +37,5 @@ dispor de PHP, Composer, PostgreSQL 16 e workflow de CI; a suíte executável e 
 resultados da integração estão registrados em
 [base executável](execution-baseline-2026-11-18.md). Este adendo não altera a matriz
 de cenários nem transforma testes automatizados em homologação integrada.
+O bloco "Comando de execução" é histórico: o bootstrap atual não cria `.env` no
+projeto e usa a chave externa descrita em [ambiente local](local-environment.md).

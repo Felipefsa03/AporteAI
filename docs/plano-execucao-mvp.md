@@ -90,3 +90,16 @@ O "Estado conferido" e o commit citado no topo são registros históricos da ses
 A base técnica auditada em 18/11/2026, com CI e correções REG, está descrita em
 [base executável](execution-baseline-2026-11-18.md). Nenhuma data deste plano foi
 reescrita; a ordem de dependências e a ressalva sobre GO permanecem válidas.
+
+## Adendo ENV 18/11/2026
+
+A ausência de PHP/Composer/PostgreSQL mencionada nas seções históricas não descreve
+mais este executor: PHP 8.4.27, Composer 2.10.3 e PostgreSQL 16.10 estão disponíveis,
+além de `gh` autenticado. A reprodução em checkout limpo está documentada em
+[ambiente local](local-environment.md), com script `scripts/bootstrap-local.sh`.
+O bootstrap não cria `.env`: a chave fica em arquivo externo modo `600`, com
+caminho canonicalizado e fora de worktrees. O `PilotSeeder` passou a ser repetível;
+as filas `jobs`/`failed_jobs` têm migração própria, e `scripts/verify-local-queue.sh`
+exerce o worker em fila `probe-*` isolada, sem tocar `whatsapp`.
+BASE foi validado por humano e integrado em `main` no commit `f1c8290`. As fases
+S0–S11, as dependências e a ressalva sobre C01–C07/GO permanecem inalteradas.

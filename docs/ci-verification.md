@@ -68,3 +68,16 @@ C01–C07 e GO estavam abertos no Gartrol. `pilot.public_recommendations=false` 
 `compliance.advisory_authorized` tem default false. O ambiente de produção não foi
 auditado; uma variável de ambiente pode substituir o segundo valor. Nenhuma
 liberação comercial, validação humana ou transferência de repositório foi feita.
+
+## Adendo ENV 18/11/2026
+
+As falhas acima são históricas da base `2c5673b`. Após as entregas REG e BASE,
+integradas em `main` no commit `f1c8290`, a suíte completa em PHP 8.4/PostgreSQL
+16.10 passou com 71 testes e 328 assertions; o workflow em PHP 8.3/PG16 também
+ficou verde no merge do PR #21 (run `44379927893`). Este adendo não reatribui
+autoria nem apaga a evidência original.
+
+A reprodução local foi formalizada em [ambiente local](local-environment.md):
+checkout limpo sem `.env`, chave em arquivo externo modo `600`, PostgreSQL 16 por
+socket privado, seeder repetível e sonda de fila isolada. Nenhuma dessas mudanças
+altera gates humanos, recomendações públicas ou autorização comercial.

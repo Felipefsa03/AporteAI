@@ -41,3 +41,11 @@ php artisan migrate --fresh --seed --class=PilotSeeder --force
 ## Evidências
 
 Anexar ao card PIL: saída da jornada, log da suíte `P0HomologationTest`, capturas do dashboard com dados fictícios e o relatório de prontidão.
+
+## Adendo 18/11/2026
+
+O bloco "Preparação" acima é histórico. Para reproduzir o piloto em checkout limpo,
+use [ambiente local](local-environment.md): `scripts/bootstrap-local.sh` não cria
+`.env` no repositório, mantém a `APP_KEY` em arquivo externo modo `600` e usa
+PostgreSQL 16 por socket privado. `scripts/verify-local-queue.sh` exercita o worker
+em fila `probe-*` isolada; a fila `whatsapp` e gates humanos não são acionados.
