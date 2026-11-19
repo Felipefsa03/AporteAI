@@ -140,7 +140,9 @@ final class ConversationJourneyTest extends TestCase
         self::assertSame('awaiting_terms', $stale['journey_state']);
         self::assertSame('awaiting_terms', $this->state($first));
 
-        self::assertSame('new', $this->state($second));
+        $secondInitial = $this->send($second, 'Ola', 'chat-second-1', $later->modify('+10 seconds'));
+        self::assertSame('awaiting_identity', $secondInitial['journey_state']);
+        self::assertSame('awaiting_identity', $this->state($second));
         self::assertSame(2, InvestorJourney::query()->count());
         self::assertSame(1, AuditEvent::query()->where('action', 'journey.ignored_out_of_order')->count());
     }
@@ -163,7 +165,7 @@ final class ConversationJourneyTest extends TestCase
         self::assertSame('processing', $payment->status);
         self::assertSame('suspended', Subscription::query()->firstOrFail()->access_status);
         self::assertSame(1, AuditEvent::query()->where('action', 'billing.verification_requested')->count());
-        self::assertSame(1, AuditEvent::query()
+        self::assertSame(2, AuditEvent::query()
             ->where('action', 'journey.command')
             ->where('metadata->action', 'reconcile_requested')
             ->count());
@@ -237,7 +239,6 @@ final class ConversationJourneyTest extends TestCase
         self::assertSame(0, PortfolioEvent::query()->count());
 
         $again = $this->paidInvestor();
-        $this->candidates($now);
         $this->completeToPhaseOne($again);
         $review = $this->send($again, 'REVISAR');
         self::assertSame('review', $review['journey_state']);

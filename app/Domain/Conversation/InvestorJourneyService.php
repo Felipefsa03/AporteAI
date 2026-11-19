@@ -386,6 +386,18 @@ final class InvestorJourneyService
             return ['awaiting_decision', $this->prompt('awaiting_decision'), 'answers_complete'];
         }
 
+        $currentState = 'awaiting_aporte_'.($index + 1);
+        $normalized = $this->classifier->normalize($this->body($event));
+        $commands = [
+            'PROPOR', 'GERAR PROPOSTA', 'PROPOSTA',
+            'RECUSAR', 'RECUSAR PROPOSTA',
+            'REVISAR', 'SOLICITAR REVISAO', 'SOLICITAR REVISÃO',
+            'CONFIRMO APORTE', 'CONFIRMAR APORTE',
+        ];
+        if (in_array($normalized, $commands, true)) {
+            return [$currentState, 'Responda primeiro à pergunta '.($index + 1).'/4. '.$this->prompt($currentState), 'awaiting_expected_answer'];
+        }
+
         $session = $this->aporteSession($journey);
         $result = $this->aporte->answer(
             $session,
