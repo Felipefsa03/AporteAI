@@ -186,10 +186,20 @@ final class InvestorJourneyService
             $occurredAt = $this->occurredAt($event, $now);
 
             if ($inboxId !== '' && $journey->last_inbox_event_id === $inboxId) {
+                $this->auditOnce($investor, 'journey.ignored_duplicate', $event, [
+                    'from' => (string) $journey->state,
+                ], $now);
+
                 return $this->ignored($journey, 'duplicate_event');
             }
 
             if ($journey->last_occurred_at !== null && $occurredAt < $journey->last_occurred_at) {
+                $this->auditOnce($investor, 'journey.ignored_out_of_order', $event, [
+                    'from' => (string) $journey->state,
+                    'occurred_at' => $occurredAt->format(DATE_ATOM),
+                    'last_occurred_at' => $journey->last_occurred_at->format(DATE_ATOM),
+                ], $now);
+
                 return $this->ignored($journey, 'out_of_order');
             }
 
@@ -349,6 +359,18 @@ final class InvestorJourneyService
             }
 
             return $this->confirmAporte($investor, $journey, $event, $now);
+        }
+
+        if ($state === 'review') {
+            if (in_array($normalized, ['NOVO APORTE', 'RECOMECAR', 'RECOMEÇAR'], true)) {
+                return ['review', 'Revisão humana pendente: novo aporte não pode ser iniciado.', 'new_aporte_blocked_by_review'];
+            }
+
+            if (in_array($normalized, ['PROPOR', 'GERAR PROPOSTA', 'PROPOSTA', 'CONFIRMO APORTE', 'CONFIRMAR APORTE'], true)) {
+                return ['review', 'Revisão humana pendente: nenhuma proposta ou ordem pode avançar.', 'proposal_blocked_by_review'];
+            }
+
+            return [$state, $this->prompt($state), 'awaiting_human_review'];
         }
 
         if ($state === 'completed'

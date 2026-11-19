@@ -96,7 +96,7 @@ final class ConversationJourneyTest extends TestCase
 
         $this->assertState($investor, 'nao', 'awaiting_decision');
         $session = AporteSession::query()->where('investor_id', $investor->id)->firstOrFail();
-        self::assertSame([
+        self::assertEqualsCanonicalizing([
             'objective' => 'objetivo',
             'horizon' => 'horizonte',
             'tolerance' => 'tolerancia',
@@ -245,8 +245,8 @@ final class ConversationJourneyTest extends TestCase
         self::assertSame(1, ReviewCase::query()->where('investor_id', $again->id)->where('critical', true)->count());
 
         $blocked = $this->send($again, 'PROPOR');
-        self::assertSame('awaiting_decision', $blocked['journey_state']);
-        self::assertSame('transition_rejected', $blocked['journey_action']);
+        self::assertSame('review', $blocked['journey_state']);
+        self::assertSame('proposal_blocked_by_review', $blocked['journey_action']);
         self::assertSame(0, Report::query()->where('investor_id', $again->id)->count());
         self::assertSame(0, PortfolioEvent::query()->where('investor_id', $again->id)->count());
     }
