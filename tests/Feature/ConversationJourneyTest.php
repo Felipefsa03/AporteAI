@@ -39,6 +39,8 @@ final class ConversationJourneyTest extends TestCase
 
     private int $clock;
 
+    private string $adminId;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -46,6 +48,15 @@ final class ConversationJourneyTest extends TestCase
         config()->set('compliance.advisory_authorized', true);
         config()->set('whatsapp.cloud_api.mock', true);
         config()->set('billing.gateway.available', true);
+
+        $this->adminId = (string) AdminUser::query()->create([
+            'id' => (string) Str::uuid(),
+            'email' => 'owner-'.Str::random(8).'@example.test',
+            'password_hash' => Hash::make('secret'),
+            'mfa_secret_encrypted' => encrypt('GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'),
+            'mfa_enabled' => false,
+            'active' => true,
+        ])->id;
 
         $this->llm = new class implements LlmGateway
         {
@@ -280,7 +291,10 @@ final class ConversationJourneyTest extends TestCase
         }
         $event['inbox_event_id'] = $inboxEventId;
 
-        return app(WebhookProcessor::class)->ingest($event, $receivedAt, true);
+        $result = app(WebhookProcessor::class)->ingest($event, $receivedAt, true);
+        $reply = $result['reply'] ?? null;
+
+        return is_array($reply) ? array_replace($result, $reply) : $result;
     }
 
     private function tick(): DateTimeImmutable
@@ -359,18 +373,9 @@ final class ConversationJourneyTest extends TestCase
 
     private function investor(): Investor
     {
-        $admin = AdminUser::query()->create([
-            'id' => (string) Str::uuid(),
-            'email' => 'owner-'.Str::random(8).'@example.test',
-            'password_hash' => Hash::make('secret'),
-            'mfa_secret_encrypted' => encrypt('GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'),
-            'mfa_enabled' => false,
-            'active' => true,
-        ]);
-
         return Investor::query()->create([
             'id' => (string) Str::uuid(),
-            'created_by_admin_id' => $admin->id,
+            'created_by_admin_id' => $this->adminId,
             'full_name' => 'Investidor Jornada',
             'phone_e164' => '+55759927'.Str::random(5),
             'email' => 'jornada-'.Str::random(8).'@example.test',
