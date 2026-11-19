@@ -7,6 +7,7 @@ use App\Console\Commands\DispatchWhatsAppOutboxCommand;
 use App\Console\Commands\SyncMarketDataCommand;
 use App\Http\Middleware\EnsureAdminMfa;
 use App\Providers\BillingServiceProvider;
+use App\Providers\LlmServiceProvider;
 use App\Providers\WhatsAppServiceProvider;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
@@ -39,6 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withProviders([
         BillingServiceProvider::class,
+        LlmServiceProvider::class,
         WhatsAppServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {

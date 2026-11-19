@@ -90,7 +90,7 @@ final class BillingGateTest extends TestCase
         self::assertSame(0, $llm->calls);
     }
 
-    public function testA15ReconciliationAllowsExactlyOnePaidAnswer(): void
+    public function testA15ReconciliationAllowsPaidAccessWithoutFreeTextLlm(): void
     {
         $llm = $this->fakeLlm();
         $investor = $this->investor();
@@ -104,9 +104,11 @@ final class BillingGateTest extends TestCase
 
         $result = app(ConversationOrchestrator::class)->handle($investor, 'Minha carteira', $now);
         self::assertSame('eligible', $result['action']);
-        self::assertSame(1, $result['llm_calls']);
-        self::assertSame('RESPOSTA_PAGA', $result['reply']);
-        self::assertSame(1, $llm->calls);
+        self::assertTrue($result['allow_llm']);
+        self::assertSame(0, $result['llm_calls']);
+        self::assertSame(config('llm.free_text_reply'), $result['reply']);
+        self::assertStringNotContainsString('RESPOSTA_PAGA', $result['reply']);
+        self::assertSame(0, $llm->calls);
     }
 
     public function testContractualGracePeriodKeepsPaidAccessAvailable(): void

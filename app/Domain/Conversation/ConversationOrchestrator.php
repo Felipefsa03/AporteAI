@@ -10,15 +10,14 @@ use App\Models\Investor;
 use DateTimeImmutable;
 
 /**
- * FL-05: ordem obrigatória — autenticar, deduplicar, classificar, responder
- * bloqueio/comandos e somente depois consultar o LLM.
+ * FL-05: ordem obrigatória — autenticar, deduplicar, classificar e responder
+ * bloqueio/comandos. Texto livre nunca dispara LLM: apenas a proposta validada
+ * pode gerar explicação, pelo ProposalExplainer.
  */
 final class ConversationOrchestrator
 {
-    public function __construct(
-        private readonly BillingGate $gate,
-        private readonly ?LlmGateway $llm = null,
-    ) {
+    public function __construct(private readonly BillingGate $gate)
+    {
     }
 
     /** @return array<string, mixed> */
@@ -29,12 +28,10 @@ final class ConversationOrchestrator
         $reply = $decision->reply;
 
         if ($decision->allowLlm) {
-            if ($this->llm !== null) {
-                $reply = $this->llm->complete($message);
-                $calls = 1;
-            } else {
-                $reply = 'Atendimento disponível. Nenhum serviço pago foi executado neste ambiente.';
-            }
+            $reply = (string) config(
+                'llm.free_text_reply',
+                'Assinatura ativa. Nenhuma recomendação é gerada por texto livre; solicite a explicação da proposta validada pelo fluxo dedicado.',
+            );
         }
 
         return array_replace($decision->toArray(), ['reply' => $reply, 'llm_calls' => $calls]);
