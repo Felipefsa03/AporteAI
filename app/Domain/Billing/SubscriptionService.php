@@ -160,6 +160,43 @@ final class SubscriptionService
         return true;
     }
 
+    /**
+     * CHAT/A14: pedido de cancelamento pelo bot é ação real e auditada, mas nunca
+     * altera access_status: a decisão comercial permanece com atendimento humano.
+     */
+    public function requestCancellation(
+        Subscription $subscription,
+        string $sourceEventId,
+        DateTimeImmutable $now,
+    ): bool {
+        if ($sourceEventId === '') {
+            throw new BillingException('Pedido de cancelamento exige evento de origem.');
+        }
+
+        if (SubscriptionAccessEvent::query()
+            ->where('subscription_id', $subscription->id)
+            ->where('reason', 'bot_cancellation_requested')
+            ->where('source_event_id', $sourceEventId)
+            ->exists()) {
+            return false;
+        }
+
+        $this->accessEvent(
+            $subscription,
+            $subscription->status,
+            $subscription->access_status,
+            'bot_cancellation_requested',
+            $now,
+            $sourceEventId,
+        );
+        $this->audit('billing.cancellation_requested', $subscription, $now, [
+            'source_event_id' => $sourceEventId,
+            'access_status_unchanged' => $subscription->access_status,
+        ]);
+
+        return true;
+    }
+
     /** RB-031: baixa manual exige evidência e nunca aceita apenas o comprovante do cliente. */
     public function recordManualSettlement(
         Subscription $subscription,
@@ -247,6 +284,7 @@ final class SubscriptionService
         string $fromAccess,
         string $reason,
         DateTimeImmutable $now,
+        ?string $sourceEventId = null,
     ): void {
         SubscriptionAccessEvent::query()->create([
             'id' => (string) Str::uuid(),
@@ -255,7 +293,7 @@ final class SubscriptionService
             'previous_status' => $fromStatus.'/'.$fromAccess,
             'new_status' => $subscription->status.'/'.$subscription->access_status,
             'reason' => $reason,
-            'source_event_id' => null,
+            'source_event_id' => $sourceEventId,
             'occurred_at' => $now,
         ]);
     }

@@ -7,7 +7,9 @@ namespace App\Domain\Aporte;
 use App\Domain\Allocation\AllocationEngine;
 use App\Domain\Explanation\ProposalExplainer;
 use App\Domain\Portfolio\PortfolioLedger;
+use App\Domain\Review\ReviewService;
 use App\Models\AporteSession;
+use App\Models\AuditEvent;
 use App\Models\Instrument;
 use App\Models\Investor;
 use App\Models\ReviewCase;
@@ -24,6 +26,7 @@ final class AporteFlowService
         private readonly AllocationEngine $engine,
         private readonly ProposalExplainer $explainer,
         private readonly PortfolioLedger $ledger,
+        private readonly ReviewService $reviews,
     ) {
     }
 
@@ -173,6 +176,45 @@ final class AporteFlowService
         }
 
         return $result;
+    }
+
+    /** CHAT: recusa explícita encerra a sessão sem recomendação, ordem ou posição. */
+    public function refuse(AporteSession $session, string $reason, DateTimeImmutable $now): AporteSession
+    {
+        $session->forceFill(['phase' => 'REFUSED', 'updated_at' => $now])->save();
+
+        AuditEvent::query()->create([
+            'id' => (string) Str::uuid(),
+            'actor_type' => 'investor',
+            'actor_id' => (string) $session->investor_id,
+            'action' => 'aporte.refused',
+            'subject_type' => 'aporte_session',
+            'subject_id' => $session->id,
+            'trace_id' => (string) Str::uuid(),
+            'metadata' => ['reason' => $reason],
+            'occurred_at' => $now,
+        ]);
+
+        return $session;
+    }
+
+    /** CHAT: revisão crítica humana; nenhuma proposta ou ordem pode avançar mentre pendente. */
+    public function requestReview(AporteSession $session, string $reason, DateTimeImmutable $now): ReviewCase
+    {
+        $case = $this->reviews->openCritical(
+            $session->investor,
+            'aporte_session',
+            $session->id,
+            'aporte_review_requested',
+            ['session_id' => $session->id, 'reason' => $reason],
+            ['bot_journey'],
+            ['A2', 'A8', 'RB-002'],
+            $now,
+        );
+
+        $session->forceFill(['phase' => 'REVIEW', 'updated_at' => $now])->save();
+
+        return $case;
     }
 
     private function assertNoCriticalBlock(string $investorId): void
