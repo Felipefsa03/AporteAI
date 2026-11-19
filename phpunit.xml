@@ -28,7 +28,7 @@
         <env name="DB_DATABASE" value="aporteai_testing"/>
         <env name="DB_USERNAME" value="aporteai"/>
         <env name="DB_PASSWORD" value=""/>
-        <env name="CACHE_STORE" value="array"/>
+        <env name="CACHE_STORE" value="database"/>
         <env name="SESSION_DRIVER" value="array"/>
     </php>
 </phpunit>
