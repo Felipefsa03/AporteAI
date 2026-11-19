@@ -205,7 +205,7 @@ final class RetentionExecutionTest extends TestCase
     private function admin(string $role = 'owner'): AdminUser
     {
         /** @var AdminUser $admin */
-        $admin = AdminUser::query()->forceFill([
+        $admin = (new AdminUser())->forceFill([
             'id' => (string) Str::uuid(),
             'email' => 'owner-'.Str::random(8).'@example.test',
             'password_hash' => Hash::make('x'),
