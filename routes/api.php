@@ -36,6 +36,8 @@ Route::middleware('admin.mfa')->group(function (): void {
         ->whereUuid('investorId');
     Route::post('/admin/clients/{investorId}/data/deletion', [DataRightsController::class, 'delete'])
         ->whereUuid('investorId');
+    Route::post('/admin/data-rights/requests/{requestId}/execution', [DataRightsController::class, 'execute'])
+        ->whereUuid('requestId');
 
     Route::get('/admin/metrics', [MetricsController::class, 'index']);
     Route::get('/admin/clients/{investorId}/metrics', [MetricsController::class, 'client'])
