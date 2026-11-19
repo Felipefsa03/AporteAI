@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Privacy;
 
+use App\Domain\Review\ReviewService;
 use App\Models\AdvisoryContract;
 use App\Models\AuditEvent;
 use App\Models\DataRightsRequest;
@@ -18,6 +19,10 @@ use Illuminate\Support\Str;
 /** A9/A14/RB-014: direitos do titulares funcionam mesmo durante bloqueio financeiro. */
 final class DataRightsService
 {
+    public function __construct(private readonly ReviewService $reviews)
+    {
+    }
+
     /** @return array<string, mixed> */
     public function export(Investor $investor, DateTimeImmutable $now): array
     {
@@ -63,6 +68,9 @@ final class DataRightsService
             ],
             'rights' => ['access', 'correction', 'export', 'review', 'deletion'],
             'retention_days' => (int) config('retention.deletion_grace_days', 90),
+            'policy_version' => (string) config('retention.policy.version', 'unknown'),
+            'policy_approved' => (bool) config('retention.policy.approved', false),
+            'legal_hold_active' => (bool) config('retention.legal_hold.active', false),
             'paid_services_unlocked' => false,
         ];
     }
@@ -97,6 +105,23 @@ final class DataRightsService
         $this->audit($investor, 'data_rights.deletion_requested', $now, [
             'scheduled_for' => $request->scheduled_for->format(DATE_ATOM),
         ]);
+
+        // Nunca copia o motivo livre do titular para a revisão: pode conter PII.
+        $this->reviews->openCritical(
+            $investor,
+            'data_rights_request',
+            $request->id,
+            'deletion_requires_human_review',
+            [
+                'request_id' => $request->id,
+                'policy_version' => (string) config('retention.policy.version', 'unknown'),
+                'scheduled_for' => $request->scheduled_for->format(DATE_ATOM),
+                'categories' => array_keys((array) config('retention.policy.categories', [])),
+            ],
+            ['data_rights_request'],
+            ['A9', 'A14', 'RB-014'],
+            $now,
+        );
 
         return $request;
     }
