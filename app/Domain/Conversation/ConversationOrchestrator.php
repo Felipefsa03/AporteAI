@@ -16,14 +16,31 @@ use DateTimeImmutable;
  */
 final class ConversationOrchestrator
 {
-    public function __construct(private readonly BillingGate $gate)
-    {
+    public function __construct(
+        private readonly BillingGate $gate,
+        private readonly InvestorJourneyService $journey,
+    ) {
     }
 
-    /** @return array<string, mixed> */
-    public function handle(Investor $investor, string $message, DateTimeImmutable $now): array
-    {
+    /**
+     * @param array<string, mixed> $event evento normalizado do webhook; quando ausente,
+     *                                    mantém o comportamento legado de gate + texto livre.
+     * @return array<string, mixed>
+     */
+    public function handle(
+        Investor $investor,
+        string $message,
+        DateTimeImmutable $now,
+        array $event = [],
+    ): array {
         $decision = $this->gate->decide($investor, $message, $now);
+
+        if ($event !== []) {
+            $event['body'] = $message;
+
+            return array_replace($decision->toArray(), $this->journey->handle($investor, $event, $decision, $now));
+        }
+
         $calls = 0;
         $reply = $decision->reply;
 
