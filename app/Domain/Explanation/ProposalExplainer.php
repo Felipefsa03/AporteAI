@@ -6,12 +6,16 @@ namespace App\Domain\Explanation;
 
 use App\Domain\Allocation\Allocation;
 use App\Domain\Conversation\LlmGateway;
+use App\Domain\Conversation\LlmLimitException;
+use App\Domain\Conversation\LlmOutputRejectedException;
+use App\Domain\Conversation\LlmProviderException;
 use App\Domain\MarketData\FreshnessPolicy;
 use App\Models\AuditEvent;
 use App\Models\Explanation;
 use App\Models\Investor;
 use DateTimeImmutable;
 use Illuminate\Support\Str;
+use Throwable;
 
 /** A5/A13/RB-010/RB-012: LLM apenas explica o que o motor validou, com fonte e versão. */
 final class ProposalExplainer
@@ -56,7 +60,19 @@ final class ProposalExplainer
         unset($context['user_text'], $context['document_text']);
 
         $prompt = $this->buildPrompt($allocation);
-        $body = $this->llm->complete($prompt);
+
+        try {
+            $body = $this->llm->complete($prompt);
+        } catch (LlmOutputRejectedException $exception) {
+            return $this->fallback($investor, $exception->reason);
+        } catch (LlmLimitException $exception) {
+            return $this->fallback($investor, $exception->reason);
+        } catch (LlmProviderException $exception) {
+            return $this->fallback($investor, $exception->reason);
+        } catch (Throwable) {
+            return $this->fallback($investor, 'llm_unexpected_error');
+        }
+
         $model = (string) config('llm.model', 'unconfigured');
         $sources = [];
         foreach ($allocation->targets as $target) {
@@ -90,6 +106,19 @@ final class ProposalExplainer
             'body' => $body,
             'model' => $model,
             'sources' => $sources,
+        ];
+    }
+
+    /** @return array{status: string, reason: string, body: string, model: null} */
+    private function fallback(Investor $investor, string $reason): array
+    {
+        $this->audit($investor, 'explanation.llm_fallback', ['reason' => $reason]);
+
+        return [
+            'status' => 'review_required',
+            'reason' => $reason,
+            'body' => 'Proposta validada. A explicação automática não pode ser usada nesta chamada; encaminhada para revisão humana.',
+            'model' => null,
         ];
     }
 
