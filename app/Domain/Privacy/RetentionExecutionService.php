@@ -26,7 +26,8 @@ final class RetentionExecutionService
             throw new DataRightsException('Somente solicitações de exclusão podem ser executadas.');
         }
 
-        $investor = Investor::query()->findOrFail($request->investor_id);
+        // Replay precisa enxergar o titular após a anonimização (soft delete).
+        $investor = Investor::withTrashed()->findOrFail($request->investor_id);
 
         if ($request->status === 'executed' && $request->resolved_at !== null) {
             $this->audit($investor, $request, 'data_rights.retention_replay_ignored', $now, [

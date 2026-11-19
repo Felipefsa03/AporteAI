@@ -91,7 +91,7 @@ final class DataRightsController extends Controller
     {
         $data = $request->validate(['dry_run' => ['sometimes', 'boolean']]);
         $record = DataRightsRequest::query()->findOrFail($requestId);
-        $this->assertScope($request, Investor::query()->findOrFail($record->investor_id));
+        $this->assertScope($request, Investor::withTrashed()->findOrFail($record->investor_id));
 
         $dryRun = array_key_exists('dry_run', $data)
             ? (bool) $data['dry_run']
@@ -112,7 +112,8 @@ final class DataRightsController extends Controller
 
     private function scopedInvestor(Request $request, string $investorId): Investor
     {
-        $investor = Investor::query()->findOrFail($investorId);
+        // A execução/replay de direitos precisa localizar titulares já anonimizados.
+        $investor = Investor::withTrashed()->findOrFail($investorId);
         $this->assertScope($request, $investor);
 
         return $investor;
