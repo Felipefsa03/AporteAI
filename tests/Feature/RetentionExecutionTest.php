@@ -142,8 +142,8 @@ final class RetentionExecutionTest extends TestCase
         $ownerB = $this->admin();
         $investorA = $this->investor($ownerA);
         $investorB = $this->investor($ownerB);
-        $tokenA = $this->session($ownerA);
-        $tokenB = $this->session($ownerB);
+        $tokenA = $this->adminSessionToken($ownerA);
+        $tokenB = $this->adminSessionToken($ownerB);
 
         $this->withHeader('Authorization', 'Bearer '.$tokenB)
             ->getJson('/api/v1/admin/clients/'.$investorA->id.'/data/export')
@@ -219,7 +219,7 @@ final class RetentionExecutionTest extends TestCase
         return $admin;
     }
 
-    private function session(AdminUser $admin): string
+    private function adminSessionToken(AdminUser $admin): string
     {
         $token = Str::random(64);
         AdminSession::query()->create([
