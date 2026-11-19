@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\ApplyPortfolioEventCommand;
 use App\Console\Commands\SyncMarketDataCommand;
 use App\Http\Middleware\EnsureAdminMfa;
 use App\Providers\BillingServiceProvider;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withCommands([
+        ApplyPortfolioEventCommand::class,
         SyncMarketDataCommand::class,
     ])
     ->withSchedule(function (Schedule $schedule): void {
