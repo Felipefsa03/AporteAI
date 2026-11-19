@@ -20,9 +20,13 @@ final class WhatsAppConversation extends Model
         'bot_phone_number_id',
         'state',
         'last_message_at',
+        'last_inbound_at',
+        'last_outbound_at',
     ];
 
     protected $casts = [
         'last_message_at' => 'immutable_datetime',
+        'last_inbound_at' => 'immutable_datetime',
+        'last_outbound_at' => 'immutable_datetime',
     ];
 }

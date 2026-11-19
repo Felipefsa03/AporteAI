@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Console\Commands\ApplyPortfolioEventCommand;
+use App\Console\Commands\DispatchWhatsAppOutboxCommand;
 use App\Console\Commands\SyncMarketDataCommand;
 use App\Http\Middleware\EnsureAdminMfa;
 use App\Providers\BillingServiceProvider;
+use App\Providers\WhatsAppServiceProvider;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands([
         ApplyPortfolioEventCommand::class,
+        DispatchWhatsAppOutboxCommand::class,
         SyncMarketDataCommand::class,
     ])
     ->withSchedule(function (Schedule $schedule): void {
@@ -36,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withProviders([
         BillingServiceProvider::class,
+        WhatsAppServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

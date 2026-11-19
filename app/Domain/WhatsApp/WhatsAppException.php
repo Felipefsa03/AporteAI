@@ -6,6 +6,6 @@ namespace App\Domain\WhatsApp;
 
 use RuntimeException;
 
-final class WhatsAppException extends RuntimeException
+class WhatsAppException extends RuntimeException
 {
 }
