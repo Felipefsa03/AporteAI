@@ -239,7 +239,13 @@ final class LlmProviderTest extends TestCase
         Http::preventStrayRequests();
 
         $investor = $this->investor();
-        $subscription = $this->subscription($investor, 'active', 'active', 3);
+        $subscription = $this->subscription(
+            $investor,
+            'active',
+            'active',
+            3,
+            new DateTimeImmutable('2026-11-20T12:00:00+00:00'),
+        );
         $this->payment($subscription);
 
         $result = app(ConversationOrchestrator::class)->handle(
@@ -308,8 +314,13 @@ final class LlmProviderTest extends TestCase
         ]);
     }
 
-    private function subscription(Investor $investor, string $status, string $access, int $grace): Subscription
-    {
+    private function subscription(
+        Investor $investor,
+        string $status,
+        string $access,
+        int $grace,
+        ?DateTimeImmutable $dueAt = null,
+    ): Subscription {
         return Subscription::query()->create([
             'id' => (string) Str::uuid(),
             'investor_id' => $investor->id,
@@ -318,7 +329,7 @@ final class LlmProviderTest extends TestCase
             'access_status' => $access,
             'grace_days' => $grace,
             'started_at' => new DateTimeImmutable('2026-11-01T12:00:00+00:00'),
-            'due_at' => new DateTimeImmutable('2026-11-16T12:00:00+00:00'),
+            'due_at' => $dueAt ?? new DateTimeImmutable('2026-11-16T12:00:00+00:00'),
         ]);
     }
 
