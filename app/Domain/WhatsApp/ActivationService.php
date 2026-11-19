@@ -20,7 +20,7 @@ final class ActivationService
         private readonly NumberRegistry $numbers,
         private readonly OptInPolicy $optIn,
         private readonly AccessPolicy $access,
-        private readonly MetaCloudApiGateway $gateway,
+        private readonly WhatsAppOutboundService $outbound,
     ) {
     }
 
@@ -76,17 +76,24 @@ final class ActivationService
             return;
         }
 
-        $providerMessageId = $this->gateway->sendTemplate(
-            $investor->phone_e164,
+        $outbox = $this->outbound->queueTemplate(
+            $investor,
             $request->template_name,
             $request->bot_phone_number_id,
+            $now,
+            $request->id,
         );
 
-        $request->forceFill([
-            'status' => 'template_sent',
-            'provider_message_id' => $providerMessageId,
-        ])->save();
+        $this->outbound->deliver($outbox->id, $now);
+        $outbox->refresh();
 
+        if ($outbox->status !== 'sent') {
+            $request->forceFill(['status' => 'blocked'])->save();
+
+            return;
+        }
+
+        $request->refresh();
         $this->audit($investor, $request, 'whatsapp.template_sent', $now);
     }
 

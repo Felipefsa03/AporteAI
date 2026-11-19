@@ -26,6 +26,17 @@ final class OptInPolicy
             ->exists();
     }
 
+    /** Opt-out explícito prevalece até que exista aceite mais recente. */
+    public function isOptedOut(Investor $investor): bool
+    {
+        $latest = WhatsAppOptin::query()
+            ->where('investor_id', $investor->id)
+            ->latest('accepted_at')
+            ->first();
+
+        return $latest !== null && $latest->revoked_at !== null;
+    }
+
     public function revokeActive(Investor $investor, DateTimeImmutable $at): void
     {
         WhatsAppOptin::query()

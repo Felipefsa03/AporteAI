@@ -19,6 +19,7 @@ use App\Http\Controllers\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/webhooks/whatsapp-bot/verify', [WhatsAppWebhookController::class, 'verify']);
+Route::get('/webhooks/whatsapp-bot', [WhatsAppWebhookController::class, 'verify']);
 Route::post('/webhooks/whatsapp-bot', [WhatsAppWebhookController::class, 'webhook']);
 Route::post('/webhooks/payment-gateway', [PaymentWebhookController::class, 'handle']);
 

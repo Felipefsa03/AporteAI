@@ -19,6 +19,8 @@ return [
     'cloud_api' => [
         'base_url' => env('WHATSAPP_CLOUD_API_BASE_URL', 'https://graph.facebook.com/v21.0'),
         'access_token' => env('WHATSAPP_CLOUD_API_TOKEN'),
+        // Mocks por padrão: nenhum envio real sem credencial e destinatário autorizado.
+        'mock' => env('WHATSAPP_CLOUD_API_MOCK', true),
     ],
 
     'webhook' => [
@@ -28,6 +30,21 @@ return [
 
     'templates' => [
         'activation' => env('WHATSAPP_ACTIVATION_TEMPLATE', 'aporteai_activation_v1'),
+        'allowed' => array_values(array_unique([
+            env('WHATSAPP_ACTIVATION_TEMPLATE', 'aporteai_activation_v1'),
+        ])),
+    ],
+
+    'delivery' => [
+        'window_hours' => (int) env('WHATSAPP_WINDOW_HOURS', 24),
+        'tries' => (int) env('WHATSAPP_DELIVERY_TRIES', 5),
+        'backoff' => [10, 30, 60, 120, 300],
+        'transient_codes' => [4, 80007, 130429, 131048, 131056, 131000, 131016, 133004, 2494100],
+        'permanent_reasons' => [
+            131047 => 'window_expired',
+            132001 => 'template_not_approved',
+            132015 => 'template_paused',
+        ],
     ],
 
     'queue' => env('WHATSAPP_QUEUE', 'whatsapp'),
