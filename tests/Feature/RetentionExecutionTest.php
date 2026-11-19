@@ -138,20 +138,20 @@ final class RetentionExecutionTest extends TestCase
 
     public function testCrossScopeExportAndCorrectionAreDenied(): void
     {
+        // A tabela admite apenas uma conta ativa; o segundo proprietário é dono do outro titular.
         $ownerA = $this->admin();
-        $ownerB = $this->admin();
+        $ownerB = $this->admin('owner', false);
         $investorA = $this->investor($ownerA);
         $investorB = $this->investor($ownerB);
         $tokenA = $this->adminSessionToken($ownerA);
-        $tokenB = $this->adminSessionToken($ownerB);
 
-        $this->withHeader('Authorization', 'Bearer '.$tokenB)
-            ->getJson('/api/v1/admin/clients/'.$investorA->id.'/data/export')
+        $this->withHeader('Authorization', 'Bearer '.$tokenA)
+            ->getJson('/api/v1/admin/clients/'.$investorB->id.'/data/export')
             ->assertStatus(403);
 
         $this->flushHeaders();
-        $this->withHeader('Authorization', 'Bearer '.$tokenB)
-            ->postJson('/api/v1/admin/clients/'.$investorA->id.'/data/correction', [
+        $this->withHeader('Authorization', 'Bearer '.$tokenA)
+            ->postJson('/api/v1/admin/clients/'.$investorB->id.'/data/correction', [
                 'field' => 'profession',
                 'value' => 'engenheira',
             ])
@@ -202,7 +202,7 @@ final class RetentionExecutionTest extends TestCase
         }
     }
 
-    private function admin(string $role = 'owner'): AdminUser
+    private function admin(string $role = 'owner', bool $active = true): AdminUser
     {
         /** @var AdminUser $admin */
         $admin = (new AdminUser())->forceFill([
@@ -211,7 +211,7 @@ final class RetentionExecutionTest extends TestCase
             'password_hash' => Hash::make('x'),
             'mfa_secret_encrypted' => encrypt('GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'),
             'mfa_enabled' => false,
-            'active' => true,
+            'active' => $active,
             'role' => $role,
         ]);
         $admin->save();
