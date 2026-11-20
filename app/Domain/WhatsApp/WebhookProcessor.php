@@ -6,6 +6,7 @@ namespace App\Domain\WhatsApp;
 
 use App\Domain\Conversation\ConversationOrchestrator;
 use App\Models\ActivationRequest;
+use App\Models\AuditEvent;
 use App\Models\Investor;
 use App\Models\WhatsAppConversation;
 use App\Models\WhatsAppMessage;
@@ -151,6 +152,7 @@ final class WebhookProcessor
         }
 
         if (is_array($handoffKeywords) && in_array($keyword, $handoffKeywords, true)) {
+            $this->auditHandoff($investor, $event, $receivedAt);
             if ($queueReply && $investor !== null) {
                 $instructions = $this->handoff->instructions();
                 $this->outbound->queueText(
@@ -169,7 +171,12 @@ final class WebhookProcessor
             return ['status' => 'stored'];
         }
 
-        $reply = $this->orchestrator->handle($investor, $body, $receivedAt);
+        $reply = $this->orchestrator->handle($investor, $body, $receivedAt, [
+            'external_id' => $externalId,
+            'inbox_event_id' => $event['inbox_event_id'] ?? null,
+            'occurred_at' => $occurredAt,
+            'body' => $body,
+        ]);
         $text = isset($reply['reply']) && is_string($reply['reply']) ? $reply['reply'] : '';
 
         if ($text !== '') {
@@ -183,6 +190,39 @@ final class WebhookProcessor
         }
 
         return ['status' => 'stored', 'reply' => $reply];
+    }
+
+    /** @param array<string, mixed> $event */
+    private function auditHandoff(?Investor $investor, array $event, DateTimeImmutable $receivedAt): void
+    {
+        $inboxId = (string) ($event['inbox_event_id'] ?? '');
+        if ($investor === null || $inboxId === '') {
+            return;
+        }
+
+        if (AuditEvent::query()
+            ->where('action', 'journey.command')
+            ->where('metadata->inbox_event_id', $inboxId)
+            ->exists()) {
+            return;
+        }
+
+        AuditEvent::query()->create([
+            'id' => (string) Str::uuid(),
+            'actor_type' => 'investor',
+            'actor_id' => (string) $investor->id,
+            'action' => 'journey.command',
+            'subject_type' => 'investor',
+            'subject_id' => (string) $investor->id,
+            'trace_id' => (string) Str::uuid(),
+            'metadata' => [
+                'inbox_event_id' => $inboxId,
+                'external_id' => (string) ($event['external_id'] ?? ''),
+                'command' => 'handoff',
+                'action' => 'human_handoff',
+            ],
+            'occurred_at' => $receivedAt,
+        ]);
     }
 
     public function investorForPhone(string $phone): ?Investor
