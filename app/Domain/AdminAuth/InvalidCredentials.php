@@ -6,6 +6,6 @@ namespace App\Domain\AdminAuth;
 
 use RuntimeException;
 
-final class InvalidCredentials extends RuntimeException
+class InvalidCredentials extends RuntimeException
 {
 }
