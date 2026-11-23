@@ -6,6 +6,7 @@ use App\Console\Commands\ApplyPortfolioEventCommand;
 use App\Console\Commands\DispatchWhatsAppOutboxCommand;
 use App\Console\Commands\SyncMarketDataCommand;
 use App\Http\Middleware\EnsureAdminMfa;
+use App\Http\Middleware\EnsurePanelAdmin;
 use App\Providers\BillingServiceProvider;
 use App\Providers\LlmServiceProvider;
 use App\Providers\WhatsAppServiceProvider;
@@ -16,6 +17,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
+        web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         apiPrefix: 'api/v1',
         health: '/up',
@@ -46,6 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin.mfa' => EnsureAdminMfa::class,
+            'panel.admin' => EnsurePanelAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
