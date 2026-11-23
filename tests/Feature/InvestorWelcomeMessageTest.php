@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Domain\WhatsApp\WhatsAppGateway;
-use App\Events\InvestorCreated;
 use App\Models\AdminUser;
 use App\Models\Investor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -22,7 +20,7 @@ final class InvestorWelcomeMessageTest extends TestCase
 
     public function testWelcomeMessageDispatchedOnInvestorCreation(): void
     {
-        Event::fake();
+        Config::set('whatsapp.bot.phone_number_id', '123456789');
 
         $admin = AdminUser::create([
             'id' => (string) Str::uuid(),
@@ -33,6 +31,12 @@ final class InvestorWelcomeMessageTest extends TestCase
             'active' => true,
         ]);
 
+        $this->mock(WhatsAppGateway::class, function ($mock) {
+            $mock->shouldReceive('sendText')
+                ->times(2)
+                ->andReturn('message-id-1');
+        });
+
         Investor::create([
             'id' => (string) Str::uuid(),
             'full_name' => 'João Silva',
@@ -40,8 +44,6 @@ final class InvestorWelcomeMessageTest extends TestCase
             'email' => 'joao@example.test',
             'created_by_admin_id' => $admin->id,
         ]);
-
-        Event::assertDispatched(InvestorCreated::class);
     }
 
     public function testWelcomeMessageSentToCorrectNumber(): void
