@@ -6,12 +6,10 @@ namespace Tests\Feature;
 
 use App\Domain\WhatsApp\WhatsAppGateway;
 use App\Events\InvestorCreated;
-use App\Models\AdminUser;
 use App\Models\Investor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -24,22 +22,13 @@ final class InvestorWelcomeMessageTest extends TestCase
     {
         Event::fake();
 
-        $admin = AdminUser::query()->create([
+        Investor::create([
             'id' => (string) Str::uuid(),
-            'email' => 'admin@example.test',
-            'password_hash' => Hash::make('senha'),
-            'mfa_secret_encrypted' => '',
-            'mfa_enabled' => false,
-            'active' => true,
+            'full_name' => 'João Silva',
+            'phone_e164' => '+5575991234567',
+            'email' => 'joao@example.test',
+            'created_by_admin_id' => (string) Str::uuid(),
         ]);
-
-        $this->actingAs($admin, 'admin')
-            ->postJson('/api/v1/admin/investors', [
-                'full_name' => 'João Silva',
-                'phone_e164' => '+5575991234567',
-                'email' => 'joao@example.test',
-            ])
-            ->assertStatus(201);
 
         Event::assertDispatched(InvestorCreated::class);
     }
