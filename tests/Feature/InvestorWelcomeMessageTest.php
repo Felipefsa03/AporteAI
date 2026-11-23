@@ -45,8 +45,7 @@ final class InvestorWelcomeMessageTest extends TestCase
     public function testWelcomeMessageSentToCorrectNumber(): void
     {
         $whatsapp = $this->mock(WhatsAppGateway::class);
-
-        $whatsapp->expects('send')
+        $whatsapp->shouldReceive('send')
             ->withArgs(fn ($toNumber, $message) =>
                 str_contains($toNumber, '5575991234567') &&
                 str_contains($message, 'Bem-vindo ao AporteAI')
@@ -67,8 +66,7 @@ final class InvestorWelcomeMessageTest extends TestCase
     public function testWelcomeMessageContainsInvestorName(): void
     {
         $whatsapp = $this->mock(WhatsAppGateway::class);
-
-        $whatsapp->expects('send')
+        $whatsapp->shouldReceive('send')
             ->withArgs(fn ($toNumber, $message) =>
                 str_contains($message, 'Carlos')
             )
