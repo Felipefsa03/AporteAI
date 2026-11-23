@@ -247,7 +247,6 @@ final class OwnerAuthFlowTest extends TestCase
         $path = storage_path('logs/sms-auth-test.log');
         @unlink($path);
         config()->set('logging.channels.sms.path', $path);
-        Log::purge('sms');
 
         try {
             (new LogSmsGateway())->send(self::OWNER_PHONE, 'AporteAI: seu codigo de acesso e 123456.');
@@ -257,7 +256,6 @@ final class OwnerAuthFlowTest extends TestCase
             self::assertStringContainsString('owner_mfa_code', $contents);
             self::assertStringContainsString('[redacted]', $contents);
         } finally {
-            Log::purge('sms');
             @unlink($path);
         }
     }
