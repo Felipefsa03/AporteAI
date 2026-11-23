@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Domain\WhatsApp\WhatsAppGateway;
 use App\Events\InvestorCreated;
 use App\Models\AdminUser;
 use App\Models\Investor;
-use App\Support\WhatsAppGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -44,13 +45,16 @@ final class InvestorWelcomeMessageTest extends TestCase
 
     public function testWelcomeMessageSentToCorrectNumber(): void
     {
+        Config::set('whatsapp.bot_phone_number_id', '123456789');
+
         $this->mock(WhatsAppGateway::class, function ($mock) {
-            $mock->shouldReceive('send')
-                ->withArgs(fn ($toNumber, $message) =>
-                    str_contains($toNumber, '5575991234567') &&
-                    str_contains($message, 'Bem-vindo ao AporteAI')
+            $mock->shouldReceive('sendText')
+                ->withArgs(fn ($phoneE164, $text, $botPhoneNumberId) =>
+                    str_contains($phoneE164, '5575991234567') &&
+                    str_contains($text, 'Bem-vindo ao AporteAI')
                 )
-                ->once();
+                ->once()
+                ->andReturn('message-id-123');
         });
 
         Investor::create([
@@ -64,12 +68,15 @@ final class InvestorWelcomeMessageTest extends TestCase
 
     public function testWelcomeMessageContainsInvestorName(): void
     {
+        Config::set('whatsapp.bot_phone_number_id', '123456789');
+
         $this->mock(WhatsAppGateway::class, function ($mock) {
-            $mock->shouldReceive('send')
-                ->withArgs(fn ($toNumber, $message) =>
-                    str_contains($message, 'Carlos')
+            $mock->shouldReceive('sendText')
+                ->withArgs(fn ($phoneE164, $text, $botPhoneNumberId) =>
+                    str_contains($text, 'Carlos')
                 )
-                ->once();
+                ->once()
+                ->andReturn('message-id-456');
         });
 
         Investor::create([

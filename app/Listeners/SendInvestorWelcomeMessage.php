@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Listeners;
 
 use App\Domain\Messaging\WelcomeMessageTemplate;
+use App\Domain\WhatsApp\WhatsAppGateway;
 use App\Events\InvestorCreated;
-use App\Support\WhatsAppGateway;
 
 final class SendInvestorWelcomeMessage
 {
@@ -16,12 +16,13 @@ final class SendInvestorWelcomeMessage
     public function handle(InvestorCreated $event): void
     {
         $investor = $event->investor;
-
         $message = WelcomeMessageTemplate::forInvestor($investor->full_name);
+        $botNumber = config('whatsapp.bot_phone_number_id');
 
-        $this->whatsapp->send(
-            toNumber: $investor->phone_e164,
-            message: $message,
+        $this->whatsapp->sendText(
+            phoneE164: $investor->phone_e164,
+            text: $message,
+            botPhoneNumberId: $botNumber,
         );
     }
 }
