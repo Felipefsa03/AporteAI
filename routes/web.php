@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Ops\OpsController;
 use App\Http\Controllers\Panel\PanelController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,4 +26,10 @@ Route::middleware('panel.admin')->prefix('painel')->name('panel.')->group(static
     Route::post('/clientes/{investorId}/dados/exportar', [PanelController::class, 'exportData'])->name('client.data.export');
     Route::post('/clientes/{investorId}/dados/excluir', [PanelController::class, 'deleteData'])->name('client.data.delete');
     Route::post('/dados/{requestId}/executar', [PanelController::class, 'executeDataRequest'])->name('data.execute');
+});
+
+Route::prefix('ops')->middleware('ops.token')->group(static function (): void {
+    Route::get('/health', [OpsController::class, 'health'])->name('ops.health');
+    Route::get('/metrics', [OpsController::class, 'metrics'])->name('ops.metrics');
+    Route::post('/alerts/test', [OpsController::class, 'testAlert'])->name('ops.alert.test');
 });
