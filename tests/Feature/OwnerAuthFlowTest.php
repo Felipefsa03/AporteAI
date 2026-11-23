@@ -14,7 +14,6 @@ use App\Support\LogSmsGateway;
 use App\Support\SmsGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -220,10 +219,11 @@ final class OwnerAuthFlowTest extends TestCase
             ->where('metadata->method', 'google')
             ->exists());
 
+        // TrimStrings remove o espaço antes da validação; a credencial ainda é rejeitada.
         $this->postJson('/api/v1/admin/auth/google', [
             'credential' => ' stranger ',
             'trace_id' => (string) Str::uuid(),
-        ])->assertStatus(422);
+        ])->assertStatus(401);
 
         $this->postJson('/api/v1/admin/auth/google', [
             'credential' => 'stranger',
