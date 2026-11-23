@@ -28,6 +28,7 @@ final class InvestorWelcomeMessageTest extends TestCase
             'id' => (string) Str::uuid(),
             'email' => 'admin@example.test',
             'password_hash' => Hash::make('senha'),
+            'mfa_secret_encrypted' => '',
             'mfa_enabled' => false,
             'active' => true,
         ]);
