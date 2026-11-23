@@ -8,21 +8,20 @@ final class WelcomeMessageTemplate
 {
     public static function forInvestor(string $investorName): string
     {
-        return sprintf(
-            "Olá %s! 👋\n\n"
-            "Bem-vindo ao AporteAI!\n\n"
-            "Sua conta foi criada com sucesso no piloto fictício. "
-            "Você já pode:\n\n"
-            "• Acessar o painel exclusivo\n"
-            "• Receber recomendações personalizadas\n"
-            "• Simular investimentos\n"
-            "• Consultar análises e relatórios\n\n"
-            "Próximos passos:\n"
-            "1. Complete seu perfil de investidor\n"
-            "2. Defina seus objetivos\n"
-            "3. Comece a explorar oportunidades\n\n"
-            "Precisa de ajuda? Digite 'ajuda' ou contate nosso time.",
-            $investorName
-        );
+        $template = "Olá %s! 👋\n\n" .
+            "Bem-vindo ao AporteAI!\n\n" .
+            "Sua conta foi criada com sucesso no piloto fictício. " .
+            "Você já pode:\n\n" .
+            "• Acessar o painel exclusivo\n" .
+            "• Receber recomendações personalizadas\n" .
+            "• Simular investimentos\n" .
+            "• Consultar análises e relatórios\n\n" .
+            "Próximos passos:\n" .
+            "1. Complete seu perfil de investidor\n" .
+            "2. Defina seus objetivos\n" .
+            "3. Comece a explorar oportunidades\n\n" .
+            "Precisa de ajuda? Digite 'ajuda' ou contate nosso time.";
+
+        return sprintf($template, $investorName);
     }
 }
