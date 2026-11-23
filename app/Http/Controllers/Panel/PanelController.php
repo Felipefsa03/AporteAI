@@ -30,7 +30,12 @@ final class PanelController
             return redirect()->route('panel.dashboard');
         }
 
-        return view('panel.login');
+        $clientId = (string) config('services.google.client_id', '');
+
+        return view('panel.login', [
+            'googleConfigured' => $clientId !== '',
+            'googleClientId' => $clientId,
+        ]);
     }
 
     public function login(Request $request): RedirectResponse
@@ -41,23 +46,131 @@ final class PanelController
             'mfa_code' => ['nullable', 'string', 'size:6'],
         ]);
 
-        [$status, $payload] = $this->api('POST', 'admin/auth/login', [
-            'email' => $data['email'],
+        $email = mb_strtolower(trim($data['email']));
+
+        // Compatibilidade com o fluxo TOTP usado pelos testes e pelo painel anterior.
+        if (isset($data['mfa_code'])) {
+            [$status, $payload] = $this->api('POST', 'admin/auth/login', [
+                'email' => $email,
+                'password' => $data['password'],
+                'mfa_code' => $data['mfa_code'],
+                'trace_id' => (string) Str::uuid(),
+            ]);
+
+            if ($status !== 200 || ! is_string($payload['token'] ?? null)) {
+                return back()
+                    ->withInput($request->except('password', 'mfa_code'))
+                    ->with('panel_error', $this->errorMessage($payload, 'Não foi possível entrar no painel.'));
+            }
+
+            $request->session()->put('panel_token', $payload['token']);
+            $request->session()->put('panel_owner_email', $email);
+
+            return redirect()->route('panel.dashboard')->with('panel_notice', 'Sessão iniciada com MFA.');
+        }
+
+        [$status, $payload] = $this->api('POST', 'admin/auth/password/start', [
+            'email' => $email,
             'password' => $data['password'],
-            'mfa_code' => $data['mfa_code'] ?? null,
+            'trace_id' => (string) Str::uuid(),
+        ]);
+
+        if ($status !== 200 || ! is_string($payload['challenge_token'] ?? null)) {
+            return back()
+                ->withInput($request->except('password'))
+                ->with('panel_error', $this->errorMessage($payload, 'Não foi possível iniciar a verificação por SMS.'));
+        }
+
+        $request->session()->put('panel_challenge_token', $payload['challenge_token']);
+        $request->session()->put('panel_challenge_expires_at', $payload['expires_at'] ?? null);
+        $request->session()->put('panel_masked_phone', $payload['masked_phone'] ?? '');
+        $request->session()->put('panel_owner_email', $email);
+
+        return redirect()->route('panel.sms')->with('panel_notice', 'Código enviado por SMS ao número cadastrado.');
+    }
+
+    public function smsForm(): View|RedirectResponse
+    {
+        $challenge = session('panel_challenge_token');
+        if (! is_string($challenge) || $challenge === '') {
+            return redirect()->route('panel.login');
+        }
+
+        $expiresAt = (string) session('panel_challenge_expires_at', '');
+        $timestamp = $expiresAt === '' ? null : strtotime($expiresAt);
+        if ($timestamp !== false && $timestamp !== null && $timestamp < time()) {
+            session()->forget(['panel_challenge_token', 'panel_challenge_expires_at', 'panel_masked_phone']);
+
+            return redirect()->route('panel.login')->with('panel_error', 'Validação expirada. Solicite um novo código.');
+        }
+
+        return view('panel.sms', [
+            'maskedPhone' => (string) session('panel_masked_phone', ''),
+            'expiresAt' => $expiresAt,
+        ]);
+    }
+
+    public function verifySms(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['code' => ['required', 'string', 'size:6']]);
+        $challenge = session('panel_challenge_token');
+
+        if (! is_string($challenge) || $challenge === '') {
+            return redirect()->route('panel.login')->with('panel_error', 'Verificação expirada. Entre novamente.');
+        }
+
+        [$status, $payload] = $this->api('POST', 'admin/auth/password/verify', [
+            'challenge_token' => $challenge,
+            'code' => $data['code'],
+            'trace_id' => (string) Str::uuid(),
+        ]);
+
+        if ($status === 410) {
+            $request->session()->forget([
+                'panel_challenge_token',
+                'panel_challenge_expires_at',
+                'panel_masked_phone',
+            ]);
+
+            return redirect()->route('panel.login')->with(
+                'panel_error',
+                $this->errorMessage($payload, 'Validação expirada. Solicite um novo código.'),
+            );
+        }
+
+        if ($status !== 200 || ! is_string($payload['token'] ?? null)) {
+            return redirect()->route('panel.sms')->with(
+                'panel_error',
+                $this->errorMessage($payload, 'Código inválido.'),
+            );
+        }
+
+        $request->session()->put('panel_token', $payload['token']);
+        $request->session()->forget([
+            'panel_challenge_token',
+            'panel_challenge_expires_at',
+            'panel_masked_phone',
+        ]);
+
+        return redirect()->route('panel.dashboard')->with('panel_notice', 'Sessão iniciada com verificação por SMS.');
+    }
+
+    public function google(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['credential' => ['required', 'string', 'max:4096']]);
+
+        [$status, $payload] = $this->api('POST', 'admin/auth/google', [
+            'credential' => $data['credential'],
             'trace_id' => (string) Str::uuid(),
         ]);
 
         if ($status !== 200 || ! is_string($payload['token'] ?? null)) {
-            return back()
-                ->withInput($request->except('password', 'mfa_code'))
-                ->with('panel_error', $this->errorMessage($payload, 'Não foi possível entrar no painel.'));
+            return back()->with('panel_error', $this->errorMessage($payload, 'Login com Google não disponível.'));
         }
 
         $request->session()->put('panel_token', $payload['token']);
-        $request->session()->put('panel_owner_email', mb_strtolower(trim($data['email'])));
 
-        return redirect()->route('panel.dashboard')->with('panel_notice', 'Sessão iniciada com MFA.');
+        return redirect()->route('panel.dashboard')->with('panel_notice', 'Sessão iniciada com conta Google do proprietário.');
     }
 
     public function logout(Request $request): RedirectResponse

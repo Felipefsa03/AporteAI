@@ -25,6 +25,12 @@ return [
             'handler_with' => ['stream' => 'php://stderr'],
             'processors' => [RedactingProcessor::class],
         ],
+        'sms' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/sms.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'processors' => [RedactingProcessor::class],
+        ],
         'null' => [
             'driver' => 'monolog',
             'handler' => NullHandler::class,

@@ -18,12 +18,15 @@ final class AdminUser extends Model
         'password_hash',
         'mfa_secret_encrypted',
         'mfa_enabled',
+        'google_sub',
+        'mfa_phone_e164',
         'active',
     ];
 
     protected $hidden = [
         'password_hash',
         'mfa_secret_encrypted',
+        'google_sub',
     ];
 
     protected $casts = [

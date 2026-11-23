@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AllocationController;
 use App\Http\Controllers\Admin\AporteController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BillingController;
+use App\Http\Controllers\Admin\OwnerAuthController;
 use App\Http\Controllers\Admin\DataRightsController;
 use App\Http\Controllers\Admin\InvestorController;
 use App\Http\Controllers\Admin\MetricsController;
@@ -24,6 +25,9 @@ Route::post('/webhooks/whatsapp-bot', [WhatsAppWebhookController::class, 'webhoo
 Route::post('/webhooks/payment-gateway', [PaymentWebhookController::class, 'handle']);
 
 Route::post('/admin/auth/login', [AuthController::class, 'login']);
+Route::post('/admin/auth/password/start', [OwnerAuthController::class, 'startPassword']);
+Route::post('/admin/auth/password/verify', [OwnerAuthController::class, 'verifyPassword']);
+Route::post('/admin/auth/google', [OwnerAuthController::class, 'google']);
 
 Route::middleware('admin.mfa')->group(function (): void {
     Route::post('/admin/auth/logout', [AuthController::class, 'logout']);
