@@ -12,6 +12,11 @@ return [
     'advisory_authorized' => false,
     'llm_model' => null,
     'fictitious_phone_prefix' => '+5575992699',
+    'owner_mfa' => [
+        'phone' => env('OWNER_MFA_PHONE'),
+        'code_ttl_seconds' => 300,
+        'max_attempts' => 5,
+    ],
     'rollback' => [
         'delete_data_rights_requests' => true,
         'delete_reports' => true,

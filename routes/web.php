@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/painel/entrar', [PanelController::class, 'loginForm'])->name('panel.login');
 Route::post('/painel/entrar', [PanelController::class, 'login'])->name('panel.login.submit');
+Route::get('/painel/entrar/codigo', [PanelController::class, 'smsForm'])->name('panel.sms');
+Route::post('/painel/entrar/codigo', [PanelController::class, 'verifySms'])->name('panel.sms.verify');
+Route::post('/painel/entrar/google', [PanelController::class, 'google'])->name('panel.google');
 Route::post('/painel/sair', [PanelController::class, 'logout'])->name('panel.logout');
 
 Route::middleware('panel.admin')->prefix('painel')->name('panel.')->group(static function (): void {

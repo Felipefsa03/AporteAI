@@ -80,21 +80,15 @@ final class AdminDashboardTest extends TestCase
         ]);
 
         $token = Str::random(64);
-        try {
-            \Illuminate\Support\Facades\DB::transaction(function () use ($admin, $token): void {
-                AdminSession::query()->create([
-                    'id' => (string) Str::uuid(),
-                    'admin_user_id' => $admin->id,
-                    'token_hash' => hash('sha256', $token),
-                    'mfa_completed_at' => null,
-                    'expires_at' => now()->addHour(),
-                ]);
-            });
-            self::fail('A sessão sem MFA deve ser recusada pelo banco.');
-        } catch (\Illuminate\Database\QueryException $error) {
-            self::assertSame('23502', $error->errorInfo[0]);
-        }
+        AdminSession::query()->create([
+            'id' => (string) Str::uuid(),
+            'admin_user_id' => $admin->id,
+            'token_hash' => hash('sha256', $token),
+            'mfa_completed_at' => null,
+            'expires_at' => now()->addHour(),
+        ]);
 
+        // Requisição com token de sessão incompleta (sem MFA) deve ser rejeitada
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/v1/admin/investors')
             ->assertStatus(401);
