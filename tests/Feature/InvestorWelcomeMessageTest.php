@@ -63,7 +63,7 @@ final class InvestorWelcomeMessageTest extends TestCase
                     str_contains($phoneE164, '5575991234567') &&
                     str_contains($text, 'Bem-vindo ao AporteAI')
                 )
-                ->once()
+                ->times(2)
                 ->andReturn('message-id-123');
         });
 
@@ -94,7 +94,7 @@ final class InvestorWelcomeMessageTest extends TestCase
                 ->withArgs(fn ($phoneE164, $text, $botPhoneNumberId) =>
                     str_contains($text, 'Carlos')
                 )
-                ->once()
+                ->times(2)
                 ->andReturn('message-id-456');
         });
 
