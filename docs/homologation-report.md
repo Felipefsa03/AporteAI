@@ -39,3 +39,19 @@ resultados da integração estão registrados em
 de cenários nem transforma testes automatizados em homologação integrada.
 O bloco "Comando de execução" é histórico: o bootstrap atual não cria `.env` no
 projeto e usa a chave externa descrita em [ambiente local](local-environment.md).
+
+## Adendo 23/11/2026 — execução integrada do piloto fictício
+
+O status "preparado para execução no CI" e a lista de evidências pendentes acima
+refletem a data de redação. No checkout integrado do piloto fictício, a matriz
+completa A1–A16/RB foi executada localmente: `OK (152 tests, 980 assertions)`, sem
+skips, com snapshots de mensagens, PNG, navegação do painel e ensaios de worker.
+O detalhamento por requisito, teste, evidência e commit está em
+[homologação E2E](evidence/e2e-homologacao.md).
+
+Este adendo atualiza o estado de execução, não a autoridade de validação: a suíte
+automatizada não substitui revisão humana, restauração real com `pg_dump`/`pg_restore`,
+teste da Meta Cloud API com destinatário autorizado ou a decisão formal dos gates
+C01–C07 e GO. A publicação GitHub também não ocorreu neste executor por ausência de
+`gh` e credencial. Nenhuma liberação comercial foi feita e
+`public_recommendations` continua `false`.
