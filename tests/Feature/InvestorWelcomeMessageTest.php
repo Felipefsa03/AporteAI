@@ -45,7 +45,7 @@ final class InvestorWelcomeMessageTest extends TestCase
 
     public function testWelcomeMessageSentToCorrectNumber(): void
     {
-        Config::set('whatsapp.bot_phone_number_id', '123456789');
+        Config::set('whatsapp.bot.phone_number_id', '123456789');
 
         $this->mock(WhatsAppGateway::class, function ($mock) {
             $mock->shouldReceive('sendText')
@@ -68,7 +68,7 @@ final class InvestorWelcomeMessageTest extends TestCase
 
     public function testWelcomeMessageContainsInvestorName(): void
     {
-        Config::set('whatsapp.bot_phone_number_id', '123456789');
+        Config::set('whatsapp.bot.phone_number_id', '123456789');
 
         $this->mock(WhatsAppGateway::class, function ($mock) {
             $mock->shouldReceive('sendText')

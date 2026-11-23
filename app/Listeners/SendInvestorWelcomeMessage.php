@@ -17,12 +17,12 @@ final class SendInvestorWelcomeMessage
     {
         $investor = $event->investor;
         $message = WelcomeMessageTemplate::forInvestor($investor->full_name);
-        $botNumber = config('whatsapp.bot_phone_number_id');
+        $botPhoneNumberId = config('whatsapp.bot.phone_number_id');
 
         $this->whatsapp->sendText(
             phoneE164: $investor->phone_e164,
             text: $message,
-            botPhoneNumberId: $botNumber,
+            botPhoneNumberId: $botPhoneNumberId,
         );
     }
 }
