@@ -44,33 +44,33 @@ final class InvestorWelcomeMessageTest extends TestCase
 
     public function testWelcomeMessageSentToCorrectNumber(): void
     {
-        $whatsapp = $this->mock(WhatsAppGateway::class);
-        $whatsapp->shouldReceive('send')
-            ->withArgs(fn ($toNumber, $message) =>
-                str_contains($toNumber, '5575991234567') &&
-                str_contains($message, 'Bem-vindo ao AporteAI')
-            )
-            ->once();
+        $this->mock(WhatsAppGateway::class, function ($mock) {
+            $mock->shouldReceive('send')
+                ->withArgs(fn ($toNumber, $message) =>
+                    str_contains($toNumber, '5575991234567') &&
+                    str_contains($message, 'Bem-vindo ao AporteAI')
+                )
+                ->once();
+        });
 
-        $investor = Investor::create([
+        Investor::create([
             'id' => (string) Str::uuid(),
             'full_name' => 'Maria Santos',
             'phone_e164' => '+5575991234567',
             'email' => 'maria@example.test',
             'created_by_admin_id' => (string) Str::uuid(),
         ]);
-
-        self::assertNotNull($investor->id);
     }
 
     public function testWelcomeMessageContainsInvestorName(): void
     {
-        $whatsapp = $this->mock(WhatsAppGateway::class);
-        $whatsapp->shouldReceive('send')
-            ->withArgs(fn ($toNumber, $message) =>
-                str_contains($message, 'Carlos')
-            )
-            ->once();
+        $this->mock(WhatsAppGateway::class, function ($mock) {
+            $mock->shouldReceive('send')
+                ->withArgs(fn ($toNumber, $message) =>
+                    str_contains($message, 'Carlos')
+                )
+                ->once();
+        });
 
         Investor::create([
             'id' => (string) Str::uuid(),

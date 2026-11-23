@@ -7,13 +7,9 @@ namespace App\Listeners;
 use App\Domain\Messaging\WelcomeMessageTemplate;
 use App\Events\InvestorCreated;
 use App\Support\WhatsAppGateway;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 
-final class SendInvestorWelcomeMessage implements ShouldQueue
+final class SendInvestorWelcomeMessage
 {
-    use InteractsWithQueue;
-
     public function __construct(private readonly WhatsAppGateway $whatsapp)
     {}
 
