@@ -6,17 +6,13 @@ use App\Console\Commands\ApplyPortfolioEventCommand;
 use App\Console\Commands\DispatchWhatsAppOutboxCommand;
 use App\Console\Commands\ReplayDeadLettersCommand;
 use App\Console\Commands\SyncMarketDataCommand;
-use App\Domain\AdminAuth\GoogleVerifier;
-use App\Domain\AdminAuth\HttpGoogleVerifier;
 use App\Http\Middleware\EnsureAdminMfa;
 use App\Http\Middleware\EnsureOpsToken;
 use App\Http\Middleware\EnsurePanelAdmin;
 use App\Providers\BillingServiceProvider;
+use App\Providers\EventServiceProvider;
 use App\Providers\LlmServiceProvider;
 use App\Providers\WhatsAppServiceProvider;
-use App\Support\LogSmsGateway;
-use App\Support\SmsGateway;
-use App\Support\TwilioSmsGateway;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -50,14 +46,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withProviders([
         BillingServiceProvider::class,
+        EventServiceProvider::class,
         LlmServiceProvider::class,
         WhatsAppServiceProvider::class,
-    ])
-    ->withBindings([
-        SmsGateway::class => static fn () => config('sms.driver') === 'twilio'
-            ? new TwilioSmsGateway()
-            : new LogSmsGateway(),
-        GoogleVerifier::class => HttpGoogleVerifier::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

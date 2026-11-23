@@ -1,0 +1,85 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use App\Events\InvestorCreated;
+use App\Models\AdminUser;
+use App\Models\Investor;
+use App\Support\WhatsAppGateway;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Tests\TestCase;
+
+/** Validar envio de mensagem de boas-vindas ao novo investidor. */
+final class InvestorWelcomeMessageTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function testWelcomeMessageDispatchedOnInvestorCreation(): void
+    {
+        Event::fake();
+
+        $admin = AdminUser::query()->create([
+            'id' => (string) Str::uuid(),
+            'email' => 'admin@example.test',
+            'password_hash' => Hash::make('senha'),
+            'mfa_enabled' => false,
+            'active' => true,
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->postJson('/api/v1/admin/investors', [
+                'full_name' => 'João Silva',
+                'phone_e164' => '+5575991234567',
+                'email' => 'joao@example.test',
+            ])
+            ->assertStatus(201);
+
+        Event::assertDispatched(InvestorCreated::class);
+    }
+
+    public function testWelcomeMessageSentToCorrectNumber(): void
+    {
+        $whatsapp = $this->mock(WhatsAppGateway::class);
+
+        $whatsapp->expects('send')
+            ->withArgs(fn ($toNumber, $message) =>
+                str_contains($toNumber, '5575991234567') &&
+                str_contains($message, 'Bem-vindo ao AporteAI')
+            )
+            ->once();
+
+        $investor = Investor::create([
+            'id' => (string) Str::uuid(),
+            'full_name' => 'Maria Santos',
+            'phone_e164' => '+5575991234567',
+            'email' => 'maria@example.test',
+            'created_by_admin_id' => (string) Str::uuid(),
+        ]);
+
+        self::assertNotNull($investor->id);
+    }
+
+    public function testWelcomeMessageContainsInvestorName(): void
+    {
+        $whatsapp = $this->mock(WhatsAppGateway::class);
+
+        $whatsapp->expects('send')
+            ->withArgs(fn ($toNumber, $message) =>
+                str_contains($message, 'Carlos')
+            )
+            ->once();
+
+        Investor::create([
+            'id' => (string) Str::uuid(),
+            'full_name' => 'Carlos Mendes',
+            'phone_e164' => '+5575991111111',
+            'email' => 'carlos@example.test',
+            'created_by_admin_id' => (string) Str::uuid(),
+        ]);
+    }
+}
