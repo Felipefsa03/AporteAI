@@ -407,15 +407,14 @@ final class PanelController
                 return [500, ['message' => 'Rota administrativa inválida.']];
             }
             [$class, $actionMethod] = explode('@', $action, 2);
-            $previousRequest = app()->bound(Request::class) ? app(Request::class) : null;
-            app()->instance(Request::class, $request);
-            try {
-                $response = app()->call([app($class), $actionMethod], $route->parameters());
-            } finally {
-                if ($previousRequest !== null) {
-                    app()->instance(Request::class, $previousRequest);
-                }
-            }
+
+            /*
+             * Injeta a requisição interna apenas nesta chamada. Trocar o binding global de
+             * Request::class vazaria a requisição entre testes e workers de longa duração.
+             */
+            $parameters = $route->parameters();
+            $parameters['request'] = $request;
+            $response = app()->call([app($class), $actionMethod], $parameters);
         } catch (ValidationException $exception) {
             return [422, ['message' => 'Dados inválidos.', 'errors' => $exception->errors()]];
         } catch (ModelNotFoundException) {
