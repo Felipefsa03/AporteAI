@@ -8,6 +8,7 @@ use App\Console\Commands\ReplayDeadLettersCommand;
 use App\Console\Commands\SyncMarketDataCommand;
 use App\Http\Middleware\EnsureAdminMfa;
 use App\Http\Middleware\EnsureOpsToken;
+use App\Http\Middleware\EnsurePanelAdmin;
 use App\Providers\BillingServiceProvider;
 use App\Providers\LlmServiceProvider;
 use App\Providers\WhatsAppServiceProvider;
@@ -51,6 +52,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.mfa' => EnsureAdminMfa::class,
             'ops.token' => EnsureOpsToken::class,
+            'panel.admin' => EnsurePanelAdmin::class,
         ]);
         $middleware->validateCsrfTokens(except: ['ops/*']);
     })

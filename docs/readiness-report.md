@@ -36,3 +36,20 @@ executada com evidência. O estado auditado, o resultado do gate e os riscos res
 da migração de auditoria estão em
 [base executável](execution-baseline-2026-11-18.md). Os itens 3 e 4 permanecem,
 assim como a conclusão: prontidão comercial depende de decisão humana.
+
+## Adendo 23/11/2026 — homologação integrada do piloto fictício
+
+A tabela acima registra a implementação por serviço isolado; **não** deve ser lida como
+produto pronto. No checkout integrado do piloto fictício (branch
+`feat/aporteai-e2e-homologacao`, merge `a3b017b`), o gate local executou
+`OK (152 tests, 980 assertions)` com PHP 8.3 e PostgreSQL descartável em UTC, sem
+skips silenciosos. A matriz requisito → teste → evidência → commit está em
+[homologação E2E](evidence/e2e-homologacao.md); os ensaios operacionais estão em
+[runbook OPS](ops-runbook.md).
+
+Continuam fora do escopo deste executor, e portanto fora de qualquer afirmação de
+prontidão: restauração real com `pg_dump`/`pg_restore`, Meta Cloud API com
+destinatário autorizado, paging externo, publicação no GitHub (sem `gh`/credencial
+neste ambiente), cloud paga e decisão formal dos gates C01–C07/GO.
+`public_recommendations` permanece `false`. A suíte verde é pré-requisito técnico,
+não homologação comercial.
