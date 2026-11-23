@@ -19,9 +19,11 @@
         <h2>Funil</h2>
         <table>
             <tbody>
-            @foreach (($metrics['funnel'] ?? []) as $label => $value)
+            @forelse (($metrics['funnel'] ?? []) as $label => $value)
                 <tr><td data-label="Etapa">{{ str_replace('_', ' ', $label) }}</td><td data-label="Quantidade">{{ $value }}</td></tr>
-            @endforeach
+            @empty
+                <tr><td colspan="2" class="empty">Funil sem dados no piloto.</td></tr>
+            @endforelse
             </tbody>
         </table>
     </section>

@@ -13,7 +13,7 @@
             @csrf
             <div class="grid">
                 <label>Nome completo<input name="full_name" required></label>
-                <label>Telefone E.164<input name="phone_e164" placeholder="+5575992605555" required></label>
+                <label>Telefone E.164<input name="phone_e164" placeholder="+55759926990001" required></label>
                 <label>E-mail<input name="email" type="email" required></label>
                 <label>Profissão<input name="profession"></label>
                 <label>Renda mensal (R$)<input name="income_monthly_brl" inputmode="decimal"></label>
@@ -36,7 +36,7 @@
                     <td data-label="Ações"><a href="{{ route('panel.client', $client['id']) }}">Abrir</a></td>
                 </tr>
             @empty
-                <tr><td colspan="4" class="muted">Nenhum cliente cadastrado.</td></tr>
+                <tr><td colspan="4" class="empty">Nenhum cliente cadastrado.</td></tr>
             @endforelse
             </tbody>
         </table>

@@ -7,14 +7,16 @@
 <p class="muted">Receita exclusivamente de assinaturas. Tolerância de 3 dias corridos antes de suspender apenas serviços pagos.</p>
 
 <div class="grid" style="margin-top:18px">
-    @foreach ($plans as $plan)
+    @forelse ($plans as $plan)
     <section class="card">
         <h2>{{ $plan['name'] ?? $plan['code'] ?? 'Plano' }}</h2>
         <p><strong>R$ {{ number_format(($plan['price_cents'] ?? 0) / 100, 2, ',', '.') }}</strong> @if (($plan['installments'] ?? 1) > 1)em {{ $plan['installments'] }}x @endif</p>
         <p class="muted">{{ $plan['billing_period'] ?? '' }}</p>
         @foreach (($plan['features'] ?? []) as $feature)<span class="tag ok">{{ is_array($feature) ? ($feature['label'] ?? '') : $feature }}</span>@endforeach
     </section>
-    @endforeach
+    @empty
+    <section class="card empty">Nenhum plano disponível no piloto.</section>
+    @endforelse
 </div>
 
 <section class="card" style="margin-top:16px">

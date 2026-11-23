@@ -29,6 +29,6 @@
     </form>
 </section>
 @empty
-<p class="muted" style="margin-top:18px">Nenhum caso na fila.</p>
+<p class="empty" style="margin-top:18px">Nenhum caso na fila.</p>
 @endforelse
 @endsection

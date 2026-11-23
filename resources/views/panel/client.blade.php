@@ -29,7 +29,7 @@
         @forelse ($portfolio['positions'] ?? [] as $position)
             <p>{{ $position['instrument_id'] ?? $position['instrument']['code'] ?? 'caixa' }} · <span class="tag">{{ $position['quantity'] ?? '' }}</span></p>
         @empty
-            <p class="muted">Sem posições. Reserva e destinos são definidos pelo proprietário.</p>
+            <p class="empty">Sem posições. Reserva e destinos são definidos pelo proprietário.</p>
         @endforelse
         <a class="btn" href="{{ route('panel.client.data', request()->route('investorId')) }}">Revisar dados</a>
     </section>
