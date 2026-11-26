@@ -12,8 +12,10 @@ use DateTimeImmutable;
 /** Envia resumo mensal de carteira e performance ao investidor via WhatsApp. */
 final class MonthlyReportService
 {
-    public function __construct(private readonly WhatsAppGateway $whatsapp)
-    {
+    public function __construct(
+        private readonly WhatsAppGateway $whatsapp,
+        private readonly ?ReportGenerator $reports = null,
+    ) {
     }
 
     public function send(Investor $investor, DateTimeImmutable $now): void
@@ -31,12 +33,30 @@ final class MonthlyReportService
 
         if ($portfolio === null) {
             $lines[] = 'Ainda não há carteira registrada. Complete seu onboarding para receber análises.';
-        } else {
-            $lines[] = 'Carteira ativa. Consulte o painel para detalhes de posições e performance.';
+            $lines[] = '';
+            $lines[] = 'Precisa de ajuda? Digite \'ajuda\'.';
+            $this->whatsapp->sendText($investor->phone_e164, implode("\n", $lines), $botPhoneNumberId);
+
+            return;
         }
 
+        $lines[] = 'Carteira ativa. Consulte o painel para detalhes de posições e performance.';
         $lines[] = '';
         $lines[] = 'Precisa de ajuda? Digite \'ajuda\'.';
+
+        if ($this->reports !== null) {
+            try {
+                $report = $this->reports->generate($investor, $portfolio, 'REALIZADO', [], $now);
+                $this->whatsapp->sendImageBytes(
+                    $investor->phone_e164,
+                    $botPhoneNumberId,
+                    $report->png,
+                    sprintf('Relatório mensal %s', $month),
+                );
+            } catch (\Throwable $exception) {
+                // Falha na geração do PNG não bloqueia o envio do texto.
+            }
+        }
 
         $this->whatsapp->sendText($investor->phone_e164, implode("\n", $lines), $botPhoneNumberId);
     }
