@@ -17,6 +17,7 @@ final class SubscriptionService
     public function __construct(
         private readonly BillingCatalog $catalog,
         private readonly AccessPolicy $access,
+        private readonly ?BillingNotificationService $notifications = null,
     ) {
     }
 
@@ -131,6 +132,10 @@ final class SubscriptionService
             ])->save();
 
             $this->accessEvent($subscription, $fromStatus, $fromAccess, 'payment_reconciled', $now);
+
+            if ($this->notifications !== null) {
+                $this->notifications->confirmation($subscription, $now);
+            }
         }
 
         $this->audit('billing.reconciled', $subscription, $now, ['event' => $externalId]);
