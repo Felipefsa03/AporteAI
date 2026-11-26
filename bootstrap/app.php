@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Console\Commands\ApplyPortfolioEventCommand;
+use App\Console\Commands\NotifyBillingCommand;
 use App\Console\Commands\DispatchWhatsAppOutboxCommand;
 use App\Console\Commands\ReplayDeadLettersCommand;
 use App\Console\Commands\SyncMarketDataCommand;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         ApplyPortfolioEventCommand::class,
         DispatchWhatsAppOutboxCommand::class,
+        NotifyBillingCommand::class,
         ReplayDeadLettersCommand::class,
         SyncMarketDataCommand::class,
     ])
