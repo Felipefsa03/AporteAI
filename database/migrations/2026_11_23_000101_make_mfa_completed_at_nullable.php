@@ -3,22 +3,17 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('admin_sessions', static function (Blueprint $table): void {
-            $table->timestampTz('mfa_completed_at')->nullable()->change();
-        });
+        DB::statement('ALTER TABLE admin_sessions ALTER COLUMN mfa_completed_at DROP NOT NULL');
     }
 
     public function down(): void
     {
-        Schema::table('admin_sessions', static function (Blueprint $table): void {
-            $table->timestampTz('mfa_completed_at')->nullable(false)->change();
-        });
+        DB::statement('ALTER TABLE admin_sessions ALTER COLUMN mfa_completed_at SET NOT NULL');
     }
 };

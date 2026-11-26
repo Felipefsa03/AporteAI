@@ -12,6 +12,7 @@ use App\Http\Middleware\EnsureAdminMfa;
 use App\Http\Middleware\EnsureOpsToken;
 use App\Http\Middleware\EnsurePanelAdmin;
 use App\Providers\BillingServiceProvider;
+use App\Providers\EventServiceProvider;
 use App\Providers\LlmServiceProvider;
 use App\Providers\WhatsAppServiceProvider;
 use App\Support\LogSmsGateway;
@@ -50,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withProviders([
         BillingServiceProvider::class,
+        EventServiceProvider::class,
         LlmServiceProvider::class,
         WhatsAppServiceProvider::class,
     ])

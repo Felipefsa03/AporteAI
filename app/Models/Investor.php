@@ -4,12 +4,20 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Events\InvestorCreated;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class Investor extends Model
 {
     use SoftDeletes;
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::created(fn (self $investor) => InvestorCreated::dispatch($investor));
+    }
 
     protected $keyType = 'string';
 
