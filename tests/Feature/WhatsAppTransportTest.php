@@ -25,7 +25,6 @@ use App\Models\WhatsAppOutboxMessage;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -214,11 +213,9 @@ final class WhatsAppTransportTest extends TestCase
         self::assertSame('queued', $outbox->status);
         self::assertSame(1, $outbox->attempts);
         self::assertSame('transient:429', $outbox->last_error);
-        $timezoneRow = DB::selectOne('show timezone');
-        $databaseTimezone = (string) array_values((array) $timezoneRow)[0];
         self::assertSame(
-            $now->modify('+7 seconds')->format('Y-m-d H:i:s'),
-            $outbox->available_at->setTimezone(new DateTimeZone($databaseTimezone))->format('Y-m-d H:i:s'),
+            $now->modify('+7 seconds')->getTimestamp(),
+            $outbox->available_at->getTimestamp(),
         );
 
         $delivered = $service->deliver($outbox->id, $now->modify('+8 seconds'));
