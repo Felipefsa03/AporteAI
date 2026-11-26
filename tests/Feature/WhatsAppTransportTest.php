@@ -44,6 +44,7 @@ final class WhatsAppTransportTest extends TestCase
         config()->set('whatsapp.webhook.verify_token', 'verify-secret');
         config()->set('whatsapp.cloud_api.mock', true);
         $this->app->instance(WhatsAppGateway::class, new MockWhatsAppGateway());
+        \Illuminate\Support\Facades\Event::fake([\App\Events\InvestorCreated::class]);
     }
 
     public function testVerifyReturnsPlainTextChallengeOnBothWebhookRoutes(): void
